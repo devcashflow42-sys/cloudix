@@ -1,0 +1,39 @@
+node_modules/
+.env
+.env.local
+.env.*.local
+
+# Logs
+src/logs/*.log
+src/logs/*.gz
+src/logs/audit.json
+*.log
+npm-debug.log*
+
+# Storage (subidas del usuario)
+src/storage/images/*
+src/storage/videos/*
+src/storage/audio/*
+src/storage/documents/*
+src/storage/podcasts/*
+src/storage/thumbnails/*
+src/storage/others/*
+!src/storage/**/.gitkeep
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Cobertura
+coverage/
+.nyc_output/
+
+# Builds
+dist/
+build/
