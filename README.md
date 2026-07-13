@@ -117,6 +117,18 @@ Si el proyecto Pages aún no existe, créalo una vez:
 npx wrangler pages project create cloudix-edge --production-branch=main
 ```
 
+### Troubleshooting del deploy
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| `Could not detect a directory containing static files` | Falta el directorio de salida estático | `pages_build_output_dir = "public"` en `wrangler.toml` y usar `wrangler pages deploy` |
+| `It looks like you've run a Workers-specific command in a Pages project` / `Missing entry-point to Worker script` | Se ejecutó `wrangler deploy` (Workers) en un proyecto Pages | Usa **`npx wrangler pages deploy public`** (o `npm run deploy`), nunca `wrangler deploy` |
+| `Authentication error [code: 10000]` en `/pages/projects/...` | El `CLOUDFLARE_API_TOKEN` no tiene permiso de Pages | Añade **Cloudflare Pages → Edit** al token (el rol de la cuenta no basta) |
+
+> **Recomendación:** conecta el repo como proyecto **Pages** (no Workers). Un
+> proyecto Pages publica `public/` + `functions/` automáticamente y no ejecuta
+> ningún `wrangler deploy`, así que ninguno de los dos primeros errores puede ocurrir.
+
 ---
 
 ## Autenticación
