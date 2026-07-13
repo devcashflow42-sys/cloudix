@@ -98,6 +98,25 @@ wrangler pages secret put DATABASE_URL
 wrangler pages secret put JWT_SECRET
 ```
 
+### Deploy desde CI (API token)
+
+Si despliegas desde un CI con `CLOUDFLARE_API_TOKEN`, el token debe tener el
+permiso **Account → Cloudflare Pages → Edit** (el rol de la cuenta, aunque sea
+Super Admin, NO equivale a los permisos del token). Un error
+`Authentication error [code: 10000]` en `/pages/projects/...` significa que
+falta ese permiso. Crea/edita el token en
+<https://dash.cloudflare.com/profile/api-tokens> con:
+
+- Account → **Cloudflare Pages** → **Edit**
+- Account → Account Settings → Read *(recomendado)*
+- User → User Details → Read *(recomendado)*
+
+Si el proyecto Pages aún no existe, créalo una vez:
+
+```bash
+npx wrangler pages project create cloudix-edge --production-branch=main
+```
+
 ---
 
 ## Autenticación
