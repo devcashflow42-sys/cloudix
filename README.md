@@ -231,6 +231,67 @@ Error:
 
 ---
 
+## Módulo de Grupos y Comunidades
+
+Sistema social para crear y administrar **grupos** y **comunidades** (una comunidad
+agrupa varios grupos por temas). Sigue la misma arquitectura modular del resto de la
+API (repository → service → controller → route), con autenticación JWT, permisos por
+rol, validación con `express-validator`, auditoría y notificaciones.
+
+### Roles
+
+- **Grupos:** `owner`, `admin`, `moderator`, `member` (permisos en `src/config/groupRoles.js`).
+- **Comunidades:** `founder`, `admin`, `moderator`, `collaborator`, `member`.
+
+Cada grupo define además *quién puede* publicar / comentar / invitar / aprobar
+solicitudes (`who_can_post`, `who_can_comment`, `who_can_invite`, `who_can_approve`).
+
+### Publicaciones
+
+Tipos soportados: `text`, `image`, `video`, `music`, `audio`, `document`, `poll`,
+`event`, `link`. Cada publicación admite reacciones (incl. *Me gusta*), comentarios,
+compartidos, guardados y reportes.
+
+### Endpoints principales (bajo `API_PREFIX`, por defecto `/api/v1`)
+
+**Grupos**
+
+```
+POST   /groups                 GET    /groups            GET /groups/:id
+PUT    /groups/:id             DELETE /groups/:id
+POST   /groups/:id/join        POST   /groups/:id/leave  POST /groups/:id/invite
+POST   /groups/:id/request     GET    /groups/:id/requests
+POST   /groups/:id/approve     POST   /groups/:id/reject
+POST   /groups/:id/ban         POST   /groups/:id/unban  POST /groups/:id/kick
+POST   /groups/:id/role        GET    /groups/:id/members
+POST   /groups/:id/posts       GET    /groups/:id/posts
+GET    /groups/:id/moderation
+```
+
+**Comunidades**
+
+```
+POST   /communities            GET    /communities       GET /communities/:id
+PUT    /communities/:id        DELETE /communities/:id
+POST   /communities/:id/groups GET    /communities/:id/groups
+POST   /communities/:id/invite POST   /communities/:id/join  POST /communities/:id/leave
+GET    /communities/:id/stats  GET    /communities/:id/members
+POST   /communities/:id/role   POST   /communities/:id/suspend  POST /communities/:id/ban
+GET    /communities/:id/moderation
+```
+
+**Notificaciones**
+
+```
+GET    /notifications          POST   /notifications/read
+```
+
+> Las tablas se crean con la migración idempotente
+> `src/database/migrations/20260712_000001_groups_communities.sql`.
+> Aplícala con `npm run migrate` (usa la conexión de tu `.env`).
+
+---
+
 ## Documentación interactiva
 
 - **Swagger UI**: `http://localhost:3000/docs`

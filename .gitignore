@@ -7,6 +7,8 @@ node_modules/
 src/logs/*.log
 src/logs/*.gz
 src/logs/audit.json
+src/logs/*audit.json
+src/logs/.*audit.json
 *.log
 npm-debug.log*
 
