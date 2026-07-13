@@ -33,6 +33,6 @@
   },
   "devDependencies": {
     "pg": "^8.13.1",
-    "wrangler": "^3.90.0"
+    "wrangler": "^4.0.0"
   }
 }
