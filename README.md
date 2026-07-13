@@ -1,304 +1,178 @@
-# Nubifly API
+# Cloudix — Backend de red social sobre Cloudflare
 
-API REST profesional, segura y escalable construida con **Node.js**, **Express** y **PostgreSQL**, siguiendo arquitectura por capas.
+Backend **edge-first** para una red social, construido con **Cloudflare Pages Functions**
+y **PostgreSQL (Neon serverless)**. Autenticación JWT, arquitectura modular, respuestas
+JSON uniformes y manejo global de errores. Diseñado para ejecutarse en el runtime edge
+de Cloudflare (V8 isolates), no en Node.
 
-Incluye:
-
-- Autenticación por **JWT** (access + refresh con rotación).
-- Registro, login, verificación de correo, recuperación y cambio de contraseña.
-- Sistema de **roles y permisos** (`admin`, `moderator`, `premium`, `user`).
-- Gestión completa de **archivos multimedia** (imágenes, videos, audios, documentos, podcasts, otros) con extracción automática de metadatos, miniaturas y filtros avanzados.
-- **Auto-migraciones** al iniciar y **seed** automático de roles, admin inicial y categorías.
-- **CRUD** con paginación, ordenamiento, búsqueda, filtros y estadísticas.
-- **Auditoría** completa de acciones sensibles.
-- **Soft delete**, restauración y borrado definitivo.
-- **Caché en memoria** por prefijo.
-- Protecciones: **helmet**, **CORS**, **rate limiting**, sanitización XSS, HPP, whitelist MIME, blacklist de extensiones peligrosas, bloqueo de cuenta por intentos fallidos.
-- **Swagger/OpenAPI 3** en `/docs` y colección **Postman** exportable.
+> **¿Por qué no Express?** Cloudflare Workers/Functions no ejecutan Node.js: no hay
+> `net`/`http` ni sockets TCP crudos, así que `express`, `pg`, `bcrypt`, `multer` o
+> `sharp` no funcionan. Aquí se usan los equivalentes edge: enrutado por archivos de
+> Pages Functions, `@neondatabase/serverless` (PostgreSQL por HTTP), **Web Crypto**
+> para hashing de contraseñas, `jose` para JWT y **R2** para archivos.
 
 ---
 
-## Requisitos
+## Estructura
 
-- Node.js **18+**
-- PostgreSQL **13+** (o servicio compatible: Neon, Supabase, Render, RDS, etc.)
-- Opcional para procesar audio/video: `ffmpeg` en el PATH del sistema (Sharp para imágenes viene como binario).
+```
+/
+├── functions/                 # Cada archivo = una ruta (Cloudflare Pages Functions)
+│   ├── _middleware.js         # CORS + manejo global de errores (todas las rutas)
+│   ├── index.js               # GET /  (health + metadatos)
+│   ├── auth/                  # register, login, logout, refresh-token,
+│   │                          #   forgot-password, reset-password, verify-email
+│   ├── users/                 # me.js (GET/PATCH), [id].js (perfil público)
+│   ├── posts/                 # index.js (feed + crear)
+│   ├── comments/              # index.js (listar por post + crear)
+│   ├── reactions/             # index.js (reaccionar / quitar)
+│   ├── stories/               # index.js (activas + crear, expiran 24h)
+│   ├── follows/               # [id].js (seguir / dejar de seguir)
+│   ├── groups/                # index.js (listar/buscar + crear)
+│   ├── communities/           # index.js (listar + crear)
+│   ├── messages/              # index.js (conversación 1:1 + enviar)
+│   ├── notifications/         # index.js (listar + marcar leídas)
+│   ├── search/                # index.js (usuarios + posts)
+│   ├── upload/                # index.js (subida a R2)
+│   ├── admin/                 # index.js (estadísticas, rol admin)
+│   ├── middleware/            # auth.js, cors.js  (módulos, NO rutas)
+│   ├── database/              # client.js (Neon serverless)
+│   ├── services/              # authService.js  (lógica reutilizable)
+│   └── utils/                 # response, errors, jwt, password, validate, slug
+│
+├── schema/schema.sql          # Esquema de referencia
+├── migrations/0001_initial.sql
+├── scripts/migrate.mjs        # Runner de migraciones (local, usa pg)
+├── public/                    # Salida estática que publica Cloudflare Pages
+├── wrangler.toml
+└── package.json
+```
+
+> **Nota sobre Pages Functions:** todo archivo `.js` bajo `functions/` que exporte
+> `onRequest*` se convierte en ruta. Los módulos de `middleware/`, `database/`,
+> `services/` y `utils/` **no** exportan handlers, así que se importan pero no se
+> exponen como endpoints. `_middleware.js` es especial: se ejecuta en todas las rutas.
 
 ---
 
-## Instalación
+## Puesta en marcha
+
+### 1. Instalar dependencias
 
 ```bash
-# 1. Instalar dependencias
 npm install
-
-# 2. Configurar entorno
-cp .env.example .env
-# Edita .env y ajusta credenciales, secretos JWT, etc.
-
-# 3. (Opcional) Ejecutar migraciones y seed manualmente
-npm run db:init
 ```
 
-## Ejecución
+### 2. Configurar la base de datos (Neon) y secretos
+
+Crea un archivo `.dev.vars` (copiado de `.dev.vars.example`) para desarrollo local:
+
+```
+DATABASE_URL="postgresql://user:pass@host/db?sslmode=require"
+JWT_SECRET="una-clave-larga-y-aleatoria-de-32-o-mas-caracteres"
+```
+
+### 3. Aplicar migraciones
 
 ```bash
-# Modo desarrollo con nodemon (auto-reload y logs coloreados)
+npm run migrate
+```
+
+### 4. Desarrollo local (emula el edge + funciones)
+
+```bash
 npm run dev
-
-# Modo producción
-npm start
+# http://localhost:8788
 ```
 
-La API queda disponible en `http://localhost:3000` con:
+### 5. Desplegar en Cloudflare Pages
 
-- **API base:** `http://localhost:3000/api/v1`
-- **Documentación Swagger:** `http://localhost:3000/docs`
-- **Archivos subidos:** `http://localhost:3000/files/...`
-- **Health check:** `http://localhost:3000/api/v1/system/health`
-
-En el primer arranque en modo dev se aplican migraciones y se ejecuta el seed, que crea:
-
-- Los 4 roles del sistema.
-- 6 categorías por defecto.
-- Un usuario admin con las credenciales de `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` (`admin@nubifly.local` / `Admin1234!` por defecto).
-
-**Cambia esa contraseña lo antes posible.**
-
----
-
-## Estructura del proyecto
-
+```bash
+npm run deploy
 ```
-src/
-├── app.js                    # Construcción de la app Express
-├── server.js                 # Bootstrap y ciclo de vida
-├── config/                   # env, roles, swagger
-├── database/                 # pool, schema.sql, migrate, seed
-├── controllers/              # Manejadores HTTP (thin)
-├── services/                 # Lógica de negocio
-├── repositories/             # Acceso a la BD
-├── models/                   # DTOs y mappers
-├── middleware/               # auth, errors, upload, rate limit, sanitize, validate
-├── routes/                   # Rutas + JSDoc OpenAPI
-├── validators/               # express-validator chains
-├── utils/                    # logger, jwt, password, cache, fileMeta, apiResponse, ...
-├── storage/                  # Archivos subidos (por tipo)
-├── logs/                     # Logs con rotación diaria
-└── docs/                     # Colección Postman, ejemplos
+
+En producción define los secretos con:
+
+```bash
+wrangler pages secret put DATABASE_URL
+wrangler pages secret put JWT_SECRET
 ```
 
 ---
 
-## Endpoints principales
+## Autenticación
 
-Todos los endpoints están montados bajo `/api/v1`.
-
-### Autenticación
-| Método | Ruta | Descripción |
-|--------|------|-------------|
-| POST   | `/auth/register`            | Registro |
-| POST   | `/auth/login`               | Login (email o username) |
-| POST   | `/auth/refresh`             | Renovar tokens (rotación) |
-| POST   | `/auth/logout`              | Cerrar sesión (revoca refresh) |
-| POST   | `/auth/logout-all`          | Cerrar todas las sesiones |
-| POST   | `/auth/forgot-password`     | Solicitar reset |
-| POST   | `/auth/reset-password`      | Aplicar reset con token |
-| POST   | `/auth/change-password`     | Cambio autenticado |
-| POST   | `/auth/verify-email`        | Verificar email |
-| POST   | `/auth/resend-verification` | Reenviar verificación |
-| GET    | `/auth/me`                  | Datos de la sesión |
-
-### Usuarios
-| Método | Ruta | Descripción |
-|--------|------|-------------|
-| GET    | `/users/profile`         | Mi perfil |
-| PUT    | `/users/profile`         | Actualizar mi perfil |
-| DELETE | `/users/account`         | Eliminar mi cuenta (soft delete) |
-| GET    | `/users`                 | Listar (moderador/admin) |
-| GET    | `/users/stats`           | Estadísticas de usuarios |
-| GET    | `/users/:id`             | Ver por ID |
-| PATCH  | `/users/:id/roles`       | Cambiar roles (admin) |
-| PATCH  | `/users/:id/status`      | Activar / desactivar |
-
-### Multimedia
-| Método | Ruta | Descripción |
-|--------|------|-------------|
-| GET    | `/media`                   | Listar con filtros |
-| GET    | `/media/stats`             | Estadísticas |
-| POST   | `/media/upload`            | Subir archivo (multipart) |
-| GET    | `/media/:id`               | Detalle |
-| PUT    | `/media/:id`               | Actualizar metadatos |
-| DELETE | `/media/:id`               | Soft delete |
-| POST   | `/media/:id/restore`       | Restaurar (mod) |
-| DELETE | `/media/:id/hard-delete`   | Borrado definitivo (admin) |
-| POST   | `/media/:id/download`      | Contador de descargas |
-
-### Categorías y tags
-| Método | Ruta | Descripción |
-|--------|------|-------------|
-| GET/POST/PUT/DELETE | `/categories` | Gestión de categorías |
-| GET/POST/DELETE     | `/tags`       | Gestión de tags |
-
-### Sistema
-| Método | Ruta | Descripción |
-|--------|------|-------------|
-| GET    | `/system/health` | Salud + BD |
-| GET    | `/system/stats`  | Estadísticas globales |
-| GET    | `/system/audit`  | Registros de auditoría (admin) |
+- **Access token**: JWT HS256 de corta duración (`ACCESS_TOKEN_TTL`, 15 min por defecto).
+  Se envía en `Authorization: Bearer <token>`.
+- **Refresh token**: opaco, aleatorio, se guarda **hasheado** (SHA-256) en
+  `refresh_tokens`. Rota en cada `/auth/refresh-token`.
+- **Contraseñas**: PBKDF2-SHA256 (100k iteraciones) vía Web Crypto.
 
 ---
 
-## Ejemplos con curl
+## Endpoints
 
-### Registro
-```bash
-curl -X POST http://localhost:3000/api/v1/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "username": "david",
-    "email": "david@example.com",
-    "password": "SuperSeguro123",
-    "firstName": "David"
-  }'
-```
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| POST | `/auth/register` | Crear cuenta |
+| POST | `/auth/login` | Iniciar sesión |
+| POST | `/auth/logout` | Revocar refresh token |
+| POST | `/auth/refresh-token` | Renovar access token |
+| POST | `/auth/forgot-password` | Solicitar restablecimiento |
+| POST | `/auth/reset-password` | Restablecer con token |
+| POST/GET | `/auth/verify-email` | Verificar correo |
+| GET/PATCH | `/users/me` | Perfil propio |
+| GET | `/users/:id` | Perfil público |
+| GET/POST | `/posts` | Feed / crear publicación |
+| GET/POST | `/comments` | Comentarios (`?postId=`) / crear |
+| POST/DELETE | `/reactions` | Reaccionar / quitar |
+| GET/POST | `/stories` | Historias activas / crear |
+| POST/DELETE | `/follows/:id` | Seguir / dejar de seguir |
+| GET/POST | `/groups` | Listar-buscar / crear |
+| GET/POST | `/communities` | Listar / crear |
+| GET/POST | `/messages` | Conversación (`?withUserId=`) / enviar |
+| GET/PATCH | `/notifications` | Listar / marcar leídas |
+| GET | `/search` | Buscar (`?q=&type=all\|users\|posts`) |
+| POST | `/upload` | Subir archivo a R2 |
+| GET | `/admin` | Estadísticas (rol `admin`) |
 
-### Login
-```bash
-curl -X POST http://localhost:3000/api/v1/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"identifier":"david@example.com","password":"SuperSeguro123"}'
-```
+Los módulos de `posts`, `comments`, `reactions`, `stories`, `follows`, `groups`,
+`communities`, `messages`, `notifications`, `search`, `upload` y `admin` incluyen un
+endpoint de ejemplo completo y funcional; se amplían siguiendo exactamente el mismo
+patrón (servicio + handler + validación).
 
-### Subida multimedia
-```bash
-curl -X POST http://localhost:3000/api/v1/media/upload \
-  -H "Authorization: Bearer <ACCESS_TOKEN>" \
-  -F "file=@./mi_video.mp4" \
-  -F "title=Mi primer video" \
-  -F "description=Descripción" \
-  -F "language=es" \
-  -F "kind=video" \
-  -F "tags[]=tutorial" \
-  -F "tags[]=nubifly"
-```
+### Formato de respuesta
 
-### Listar multimedia con filtros
-```bash
-curl "http://localhost:3000/api/v1/media?page=1&limit=20&kind=video&sort=created_at:desc&search=nubifly"
-```
-
----
-
-## Formato de respuesta uniforme
-
-Éxito:
 ```json
-{
-  "success": true,
-  "message": "Operación realizada correctamente.",
-  "data": { /* ... */ },
-  "meta": { "pagination": { "page": 1, "limit": 20, "total": 143, "totalPages": 8 } }
-}
-```
-
-Error:
-```json
-{
-  "success": false,
-  "message": "Los datos enviados no son válidos.",
-  "error": {
-    "code": "VALIDATION_ERROR",
-    "details": { "errors": [{ "field": "email", "message": "El correo no es válido." }] }
-  }
-}
+// Éxito
+{ "success": true, "message": "...", "data": { }, "meta": { } }
+// Error
+{ "success": false, "message": "...", "error": { "code": "VALIDATION_ERROR", "details": [] } }
 ```
 
 ---
 
-## Notas de producción
+## Almacenamiento de archivos (R2)
 
-1. **Genera secretos JWT fuertes** (`JWT_ACCESS_SECRET` y `JWT_REFRESH_SECRET`) de al menos 64 caracteres. El servidor rechaza el arranque en producción si detecta valores por defecto.
-2. **Configura `CORS_ORIGIN` con orígenes concretos** (no `*`).
-3. **Usa un proxy inverso** (nginx, Caddy, Cloudflare) con HTTPS forzado. `trust proxy = 1` ya viene configurado.
-4. **Guarda logs** en un volumen persistente; la rotación diaria mantiene 14 días por defecto.
-5. **Storage:** los archivos se guardan en disco. Para producción a escala considera montar `src/storage/` en un volumen compartido o mover el módulo a S3/R2/Backblaze (el modelo `MediaFile.js` ya devuelve URLs absolutas — cámbialas ahí).
-6. **ffmpeg opcional:** si el binario no está en el sistema, la extracción de duración/thumbnail de video simplemente se salta (queda `null`) pero **la subida no falla**.
-7. **Backups de la BD:** haz snapshots regulares. El esquema es idempotente, pero los datos no.
-8. **Deshabilitar seed** en producción: `SEED_ON_BOOT=false` (por defecto solo se ejecuta en dev).
-9. **Cache en memoria:** si escalas a más de un pod/instancia, sustituye `src/utils/cache.js` por Redis manteniendo la misma interfaz.
-10. **Rate limits:** ajusta `RATE_LIMIT_*` en `.env` según tu tráfico.
+`/upload` usa un bucket R2. Para activarlo:
+
+```bash
+wrangler r2 bucket create cloudix-media
+```
+
+Descomenta el binding `MEDIA_BUCKET` en `wrangler.toml` y define `MEDIA_PUBLIC_URL`
+(dominio público del bucket) para que la respuesta incluya la URL final.
 
 ---
 
-## Módulo de Grupos y Comunidades
+## Rendimiento y escalado
 
-Sistema social para crear y administrar **grupos** y **comunidades** (una comunidad
-agrupa varios grupos por temas). Sigue la misma arquitectura modular del resto de la
-API (repository → service → controller → route), con autenticación JWT, permisos por
-rol, validación con `express-validator`, auditoría y notificaciones.
-
-### Roles
-
-- **Grupos:** `owner`, `admin`, `moderator`, `member` (permisos en `src/config/groupRoles.js`).
-- **Comunidades:** `founder`, `admin`, `moderator`, `collaborator`, `member`.
-
-Cada grupo define además *quién puede* publicar / comentar / invitar / aprobar
-solicitudes (`who_can_post`, `who_can_comment`, `who_can_invite`, `who_can_approve`).
-
-### Publicaciones
-
-Tipos soportados: `text`, `image`, `video`, `music`, `audio`, `document`, `poll`,
-`event`, `link`. Cada publicación admite reacciones (incl. *Me gusta*), comentarios,
-compartidos, guardados y reportes.
-
-### Endpoints principales (bajo `API_PREFIX`, por defecto `/api/v1`)
-
-**Grupos**
-
-```
-POST   /groups                 GET    /groups            GET /groups/:id
-PUT    /groups/:id             DELETE /groups/:id
-POST   /groups/:id/join        POST   /groups/:id/leave  POST /groups/:id/invite
-POST   /groups/:id/request     GET    /groups/:id/requests
-POST   /groups/:id/approve     POST   /groups/:id/reject
-POST   /groups/:id/ban         POST   /groups/:id/unban  POST /groups/:id/kick
-POST   /groups/:id/role        GET    /groups/:id/members
-POST   /groups/:id/posts       GET    /groups/:id/posts
-GET    /groups/:id/moderation
-```
-
-**Comunidades**
-
-```
-POST   /communities            GET    /communities       GET /communities/:id
-PUT    /communities/:id        DELETE /communities/:id
-POST   /communities/:id/groups GET    /communities/:id/groups
-POST   /communities/:id/invite POST   /communities/:id/join  POST /communities/:id/leave
-GET    /communities/:id/stats  GET    /communities/:id/members
-POST   /communities/:id/role   POST   /communities/:id/suspend  POST /communities/:id/ban
-GET    /communities/:id/moderation
-```
-
-**Notificaciones**
-
-```
-GET    /notifications          POST   /notifications/read
-```
-
-> Las tablas se crean con la migración idempotente
-> `src/database/migrations/20260712_000001_groups_communities.sql`.
-> Aplícala con `npm run migrate` (usa la conexión de tu `.env`).
-
----
-
-## Documentación interactiva
-
-- **Swagger UI**: `http://localhost:3000/docs`
-- **Spec JSON**: `http://localhost:3000/docs.json`
-- **Postman**: `src/docs/postman-collection.json` (importable directamente)
-
----
+- **Edge global**: las funciones corren cerca del usuario en la red de Cloudflare.
+- **Neon serverless**: conexiones por HTTP, sin pool TCP; escala a picos sin agotar
+  conexiones. Usa la **cadena `-pooler`** de Neon para alta concurrencia.
+- **Índices**: definidos para feed, búsqueda, bandeja de mensajes y notificaciones.
+- Añade **KV/Cache** de Cloudflare para respuestas GET calientes (binding de ejemplo
+  en `wrangler.toml`).
 
 ## Licencia
 

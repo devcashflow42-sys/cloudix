@@ -1,23 +1,26 @@
 {
-  "name": "nubifly-api",
+  "name": "cloudix-edge",
   "version": "1.0.0",
-  "description": "API REST profesional, segura y escalable para gestión de usuarios y multimedia. Node.js + Express + PostgreSQL.",
-  "main": "src/server.js",
+  "description": "Backend de red social sobre Cloudflare Pages Functions (edge) + PostgreSQL (Neon serverless). JWT, arquitectura modular.",
+  "type": "module",
+  "private": true,
   "scripts": {
-    "start": "NODE_ENV=production node src/server.js",
-    "dev": "NODE_ENV=development nodemon src/server.js",
-    "migrate": "node src/database/migrate.js",
-    "seed": "node src/database/seed.js",
-    "db:init": "node src/database/migrate.js && node src/database/seed.js"
+    "dev": "wrangler pages dev public --compatibility-date=2024-09-23",
+    "deploy": "wrangler pages deploy public",
+    "migrate": "node scripts/migrate.mjs",
+    "tail": "wrangler pages deployment tail"
   },
   "keywords": [
-    "api",
-    "rest",
-    "express",
+    "cloudflare",
+    "pages",
+    "functions",
+    "workers",
+    "edge",
     "postgresql",
+    "neon",
     "jwt",
-    "multimedia",
-    "auth"
+    "rest-api",
+    "social-network"
   ],
   "author": "David",
   "license": "MIT",
@@ -25,30 +28,11 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "bcrypt": "^5.1.1",
-    "compression": "^1.7.4",
-    "cors": "^2.8.5",
-    "dotenv": "^16.4.5",
-    "express": "^4.19.2",
-    "express-rate-limit": "^7.4.0",
-    "express-validator": "^7.2.0",
-    "fluent-ffmpeg": "^2.1.3",
-    "helmet": "^7.1.0",
-    "hpp": "^0.2.3",
-    "jsonwebtoken": "^9.0.2",
-    "mime-types": "^2.1.35",
-    "morgan": "^1.10.0",
-    "multer": "^1.4.5-lts.1",
-    "pg": "^8.12.0",
-    "sharp": "^0.33.4",
-    "swagger-jsdoc": "^6.2.8",
-    "swagger-ui-express": "^5.0.1",
-    "uuid": "^10.0.0",
-    "winston": "^3.14.2",
-    "winston-daily-rotate-file": "^5.0.0",
-    "xss": "^1.0.15"
+    "@neondatabase/serverless": "^0.10.4",
+    "jose": "^5.9.6"
   },
   "devDependencies": {
-    "nodemon": "^3.1.4"
+    "pg": "^8.13.1",
+    "wrangler": "^3.90.0"
   }
 }

@@ -1,26 +1,19 @@
 node_modules/
+
+# Secretos locales de Wrangler / Cloudflare
+.dev.vars
 .env
 .env.local
 .env.*.local
 
+# Wrangler
+.wrangler/
+dist/
+build/
+
 # Logs
-src/logs/*.log
-src/logs/*.gz
-src/logs/audit.json
-src/logs/*audit.json
-src/logs/.*audit.json
 *.log
 npm-debug.log*
-
-# Storage (subidas del usuario)
-src/storage/images/*
-src/storage/videos/*
-src/storage/audio/*
-src/storage/documents/*
-src/storage/podcasts/*
-src/storage/thumbnails/*
-src/storage/others/*
-!src/storage/**/.gitkeep
 
 # Sistema
 .DS_Store
@@ -31,11 +24,3 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
-
-# Cobertura
-coverage/
-.nyc_output/
-
-# Builds
-dist/
-build/

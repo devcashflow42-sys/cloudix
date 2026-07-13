@@ -1,0 +1,14 @@
+# ==============================================================
+#  Variables SECRETAS para desarrollo local con `wrangler pages dev`.
+#  Copia este archivo a `.dev.vars` (NO lo subas al repo).
+#
+#  En producción, define cada una con:
+#    wrangler pages secret put DATABASE_URL
+#    wrangler pages secret put JWT_SECRET
+# ==============================================================
+
+# Cadena de conexión de Neon (PostgreSQL serverless sobre HTTP/WS).
+DATABASE_URL="postgresql://USER:PASSWORD@HOST/DB?sslmode=require"
+
+# Clave para firmar JWT (HS256). Usa una cadena aleatoria de >= 32 chars.
+JWT_SECRET="cambia-esto-por-una-clave-larga-y-aleatoria-de-32-o-mas"
