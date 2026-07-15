@@ -1,29 +1,408 @@
-<!doctype html>
-<html lang="es">
+<!DOCTYPE html>
+<html lang="es" class="no-js">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Cloudix API</title>
-  <style>
-    :root { color-scheme: light dark; }
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-           max-width: 720px; margin: 3rem auto; padding: 0 1.25rem; line-height: 1.6; }
-    code { background: rgba(127,127,127,.15); padding: .15em .4em; border-radius: 4px; }
-    h1 { margin-bottom: .25rem; }
-    .muted { opacity: .7; }
-    ul { padding-left: 1.2rem; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cloudix — La red social donde de verdad conectas</title>
+<meta name="description" content="Cloudix es la red social para compartir fotos y videos, seguir las tendencias, unirte a comunidades y chatear con quien te importa. Rápida, privada y sin esperas. Crea tu cuenta gratis.">
+<meta name="theme-color" content="#ffffff">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Cloudix">
+<meta property="og:title" content="Cloudix — La red social donde de verdad conectas">
+<meta property="og:description" content="Comparte tu mundo, sigue las tendencias, únete a comunidades y chatea con quien te importa. Gratis, rápida y privada.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Cloudix — La red social donde de verdad conectas">
+<meta name="twitter:description" content="Comparte tu mundo, sigue las tendencias, únete a comunidades y chatea con quien te importa.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/mian.css?v=20260524">
 </head>
 <body>
-  <h1>Cloudix API</h1>
-  <p class="muted">Backend de red social sobre Cloudflare Pages Functions + PostgreSQL (Neon).</p>
-  <p>La API vive bajo <code>/auth</code>, <code>/users</code>, <code>/posts</code>,
-     <code>/comments</code>, <code>/reactions</code>, <code>/stories</code>,
-     <code>/follows</code>, <code>/groups</code>, <code>/communities</code>,
-     <code>/messages</code>, <code>/notifications</code>, <code>/search</code>,
-     <code>/upload</code> y <code>/admin</code>.</p>
-  <p>Estado del servicio: <code>GET /</code> (función <code>functions/index.js</code>).</p>
-  <p class="muted">Esta página estática existe para que Cloudflare Pages tenga un
-     directorio de salida (<code>public/</code>) que publicar.</p>
+<a href="#main" class="btn btn--primary" style="position:absolute;left:-9999px;top:8px;z-index:200" onfocus="this.style.left='16px'" onblur="this.style.left='-9999px'">Saltar al contenido</a>
+
+<!-- SVG sprite -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="i-chat" viewBox="0 0 24 24"><path d="M4 5.5h16a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H9l-4.2 3.4a.5.5 0 0 1-.8-.4V6.5a1 1 0 0 1 1-1z"/><path d="M8.5 10.5h7M8.5 13.5h4.5"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h13M12.5 6l5.5 6-5.5 6"/></symbol>
+  <symbol id="i-photo" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3.2"/><circle cx="8.4" cy="9.6" r="1.7"/><path d="m3.6 18.5 5-5 3.4 3.4 3.2-3.2 5.2 5.2"/></symbol>
+  <symbol id="i-stories" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.6"/></symbol>
+  <symbol id="i-message" viewBox="0 0 24 24"><path d="M21 11.4a8.3 8.3 0 0 1-8.5 8.3 9 9 0 0 1-3.8-.8L4 20l1.2-4.6a8.2 8.2 0 0 1-.8-3.6A8.3 8.3 0 0 1 12.5 3h.4A8.3 8.3 0 0 1 21 11z"/></symbol>
+  <symbol id="i-code" viewBox="0 0 24 24"><path d="M8.4 17.4 3 12l5.4-5.4"/><path d="M15.6 6.6 21 12l-5.4 5.4"/><path d="M13.6 4.4 10.4 19.6"/></symbol>
+  <symbol id="m1" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.4"/></symbol>
+  <symbol id="m2" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><path d="M8.6 12h6.8"/></symbol>
+  <symbol id="m3" viewBox="0 0 24 24"><path d="M12 3.6 20.4 19H3.6z"/></symbol>
+  <symbol id="m4" viewBox="0 0 24 24"><path d="M12 2.9 20 7.5v9L12 21l-8-4.5v-9z"/></symbol>
+  <symbol id="m5" viewBox="0 0 24 24"><path d="M12 3.2 20.8 12 12 20.8 3.2 12z"/></symbol>
+  <symbol id="m6" viewBox="0 0 24 24"><path d="M4 17V9.5M9.3 17V5M14.7 17v-8M20 17v-4.5"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.6 20a5.4 5.4 0 0 1 10.8 0"/><path d="M15.8 5.3a3.2 3.2 0 0 1 0 6"/><path d="M17.4 20a5.4 5.4 0 0 0-3-4.9"/></symbol>
+  <symbol id="i-trend" viewBox="0 0 24 24"><path d="M3.5 16.5 9 11l3.8 3.8L20.5 7"/><path d="M16 7h4.5v4.5"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.8"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 2.5 4.5 5.4v6c0 4.7 3.3 8 7.5 10.1 4.2-2.1 7.5-5.4 7.5-10.1v-6L12 2.5z"/><path d="M8.8 12l2.2 2.2 4.2-4.4"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4.5" y="10" width="15" height="11" rx="2.6"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.2 12S5.8 5.5 12 5.5 21.8 12 21.8 12 18.2 18.5 12 18.5 2.2 12 2.2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13.5 2.5 4.5 13.5H11l-1.5 8 9-11H12l1.5-7.5z"/></symbol>
+  <symbol id="i-noads" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6 18.4 18.4"/></symbol>
+  <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 8h9M17 8h3M4 16h3M11 16h9"/><circle cx="15" cy="8" r="2.2"/><circle cx="9" cy="16" r="2.2"/></symbol>
+  <symbol id="i-devices" viewBox="0 0 24 24"><rect x="2.5" y="5" width="13" height="10" rx="1.6"/><path d="M2.5 18.5h11"/><rect x="16.5" y="9" width="5" height="9.5" rx="1.3"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="M21 3 10.5 13.5"/><path d="M21 3 14.3 21l-3.8-7.5L3 9.7 21 3z"/></symbol>
+  <symbol id="i-apple" viewBox="0 0 24 24"><path d="M16.4 12.6c0-2.3 1.9-3.4 2-3.5-1.1-1.6-2.8-1.8-3.4-1.8-1.4-.1-2.8.8-3.5.8s-1.8-.8-3-.8c-1.5 0-3 .9-3.8 2.3-1.6 2.8-.4 7 1.2 9.2.8 1.1 1.7 2.4 2.9 2.3 1.2-.1 1.6-.8 3-.8s1.8.8 3 .7c1.2 0 2-1.1 2.8-2.2.9-1.3 1.2-2.5 1.3-2.6-.1 0-2.5-1-2.5-3.8z" fill="currentColor" stroke="none"/><path d="M14.3 5.9c.6-.8 1.1-1.9.9-3-1 0-2.1.7-2.8 1.4-.6.7-1.1 1.8-1 2.8 1.1.1 2.2-.5 2.9-1.2z" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-gplay" viewBox="0 0 24 24"><path d="M4 3.2 14.5 12 4 20.8a1 1 0 0 1-.5-.9V4.1a1 1 0 0 1 .5-.9z"/><path d="m4 3.2 12.6 6.4M4 20.8l12.6-6.4M14.5 12l4.7-2.4a1 1 0 0 1 0 1.8L14.5 12"/></symbol>
+  <symbol id="i-s-x" viewBox="0 0 24 24"><path d="M4 4h4.2l4 5.6L16.8 4H20l-6.2 7.6L20.4 20h-4.2l-4.4-6L6.4 20H3.2l6.7-8.2L4 4z" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-s-ig" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="16.8" cy="7.2" r="1.1" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-s-yt" viewBox="0 0 24 24"><rect x="2.5" y="5.5" width="19" height="13" rx="4"/><path d="M10.2 9.3v5.4l4.6-2.7z" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-s-in" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="3.5"/><path d="M7.5 10.5v6M7.5 7.6v.02"/><path d="M11 16.5v-3.6a2 2 0 0 1 4 0v3.6M11 10.5v6"/></symbol>
+</svg>
+
+<!-- ===================== HEADER ===================== -->
+<header class="site-header" id="siteHeader">
+  <div class="wrap nav">
+    <a href="#top" class="brand" aria-label="Cloudix, inicio">
+      <span class="brand-mark" aria-hidden="true"><svg class="icon"><use href="#i-chat"/></svg></span>
+      Cloudix
+    </a>
+    <nav class="nav-links" aria-label="Principal">
+      <a href="#caracteristicas">Características</a>
+      <a href="#comunidades">Comunidades</a>
+      <a href="#seguridad">Seguridad</a>
+    </nav>
+    <span class="nav-spacer"></span>
+    <div class="nav-actions">
+      <div class="nav-auth">
+        <a href="auth.html" class="btn btn--ghost">Iniciar sesión</a>
+        <a href="auth.html?mode=register" class="btn btn--primary">Crear cuenta</a>
+      </div>
+      <a href="auth.html?mode=register" class="btn btn--primary only-mobile">Comenzar</a>
+    </div>
+  </div>
+</header>
+
+<span id="top"></span>
+<main id="main">
+
+<!-- ===================== HERO ===================== -->
+<section class="hero">
+  <div class="hero-glow" aria-hidden="true"></div>
+  <div class="wrap">
+    <div class="hero-copy">
+        <span class="badge-live"><span class="dot" aria-hidden="true"></span> Miles de personas se conectan ahora mismo</span>
+        <h1><span class="sr-only">Comparte tu mundo. Encuentra tu gente.</span><span class="rot-line" id="rotL1" aria-hidden="true"><span id="rotT1">Comparte tu mundo.</span><span class="caret"></span></span><span class="rot-line muted on" id="rotL2" aria-hidden="true"><span id="rotT2">Encuentra tu gente.</span><span class="caret"></span></span></h1>
+        <p class="hero-sub">Cloudix es la red social donde publicas fotos y videos, sigues las tendencias del momento y hablas con quien te importa. Todo en un mismo lugar: rápido, claro y sin esperas.</p>
+        <div class="hero-cta">
+          <a href="auth.html?mode=register" class="btn btn--primary btn--lg desk-only">Crear cuenta</a>
+          <a href="auth.html" class="btn btn--ghost btn--lg desk-only">Iniciar sesión</a>
+          <a href="auth.html?mode=register" class="btn btn--primary btn--lg only-mobile">Comenzar <svg class="icon"><use href="#i-arrow"/></svg></a>
+        </div>
+        <div class="hero-note">
+          <span class="avatar-stack" aria-hidden="true">
+            <span class="av av-a">L</span><span class="av av-b">M</span><span class="av av-c">S</span><span class="av av-d">A</span>
+          </span>
+          <span>Únete gratis en menos de un minuto</span>
+          <span class="sep" aria-hidden="true"></span>
+          <span>Sin anuncios invasivos</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== BRANDS ===================== -->
+<section class="brands" aria-label="Marcas presentes en Cloudix">
+  <div class="wrap">
+    <p class="brands-eyebrow">Marcas que ya están en Cloudix</p>
+  </div>
+  <div class="marquee">
+    <div class="mq-track">
+      <div class="mq-set">
+        <span class="mq-item"><svg class="mq-mark"><use href="#m1"/></svg>Spotify</span>
+        <span class="mq-item"><svg class="mq-mark"><use href="#m2"/></svg>NETFLIX</span>
+        <span class="mq-item"><svg class="mq-mark"><use href="#m3"/></svg>airbnb</span>
+        <span class="mq-item"><svg class="mq-mark"><use href="#m4"/></svg>Uber</span>
+        <span class="mq-item"><svg class="mq-mark"><use href="#m5"/></svg>Adobe</span>
+        <span class="mq-item"><svg class="mq-mark"><use href="#m6"/></svg>Slack</span>
+        <span class="mq-item"><svg class="mq-mark"><use href="#m1"/></svg>Figma</span>
+        <span class="mq-item"><svg class="mq-mark"><use href="#m2"/></svg>Notion</span>
+        <span class="mq-item"><svg class="mq-mark"><use href="#m3"/></svg>Shopify</span>
+        <span class="mq-item"><svg class="mq-mark"><use href="#m4"/></svg>Stripe</span>
+        <span class="mq-item"><svg class="mq-mark"><use href="#m5"/></svg>Dropbox</span>
+        <span class="mq-item"><svg class="mq-mark"><use href="#m6"/></svg>GitHub</span>
+        <span class="mq-item"><svg class="mq-mark"><use href="#m1"/></svg>NIKE</span>
+        <span class="mq-item"><svg class="mq-mark"><use href="#m2"/></svg>adidas</span>
+        <span class="mq-item"><svg class="mq-mark"><use href="#m3"/></svg>SAMSUNG</span>
+        <span class="mq-item"><svg class="mq-mark"><use href="#m4"/></svg>SONY</span>
+        <span class="mq-item"><svg class="mq-mark"><use href="#m5"/></svg>Canva</span>
+        <span class="mq-item"><svg class="mq-mark"><use href="#m6"/></svg>Duolingo</span>
+        <span class="mq-item"><svg class="mq-mark"><use href="#m1"/></svg>Twitch</span>
+        <span class="mq-item"><svg class="mq-mark"><use href="#m2"/></svg>Pinterest</span>
+        <span class="mq-item"><svg class="mq-mark"><use href="#m3"/></svg>Reddit</span>
+        <span class="mq-item"><svg class="mq-mark"><use href="#m4"/></svg>Zoom</span>
+        <span class="mq-item"><svg class="mq-mark"><use href="#m5"/></svg>Asana</span>
+        <span class="mq-item"><svg class="mq-mark"><use href="#m6"/></svg>Trello</span>
+        <span class="mq-item"><svg class="mq-mark"><use href="#m1"/></svg>Vimeo</span>
+      </div>
+      <div class="mq-set" aria-hidden="true">
+        <span class="mq-item"><svg class="mq-mark"><use href="#m1"/></svg>Spotify</span>
+        <span class="mq-item"><svg class="mq-mark"><use href="#m2"/></svg>NETFLIX</span>
+        <span class="mq-item"><svg class="mq-mark"><use href="#m3"/></svg>airbnb</span>
+        <span class="mq-item"><svg class="mq-mark"><use href="#m4"/></svg>Uber</span>
+        <span class="mq-item"><svg class="mq-mark"><use href="#m5"/></svg>Adobe</span>
+        <span class="mq-item"><svg class="mq-mark"><use href="#m6"/></svg>Slack</span>
+        <span class="mq-item"><svg class="mq-mark"><use href="#m1"/></svg>Figma</span>
+        <span class="mq-item"><svg class="mq-mark"><use href="#m2"/></svg>Notion</span>
+        <span class="mq-item"><svg class="mq-mark"><use href="#m3"/></svg>Shopify</span>
+        <span class="mq-item"><svg class="mq-mark"><use href="#m4"/></svg>Stripe</span>
+        <span class="mq-item"><svg class="mq-mark"><use href="#m5"/></svg>Dropbox</span>
+        <span class="mq-item"><svg class="mq-mark"><use href="#m6"/></svg>GitHub</span>
+        <span class="mq-item"><svg class="mq-mark"><use href="#m1"/></svg>NIKE</span>
+        <span class="mq-item"><svg class="mq-mark"><use href="#m2"/></svg>adidas</span>
+        <span class="mq-item"><svg class="mq-mark"><use href="#m3"/></svg>SAMSUNG</span>
+        <span class="mq-item"><svg class="mq-mark"><use href="#m4"/></svg>SONY</span>
+        <span class="mq-item"><svg class="mq-mark"><use href="#m5"/></svg>Canva</span>
+        <span class="mq-item"><svg class="mq-mark"><use href="#m6"/></svg>Duolingo</span>
+        <span class="mq-item"><svg class="mq-mark"><use href="#m1"/></svg>Twitch</span>
+        <span class="mq-item"><svg class="mq-mark"><use href="#m2"/></svg>Pinterest</span>
+        <span class="mq-item"><svg class="mq-mark"><use href="#m3"/></svg>Reddit</span>
+        <span class="mq-item"><svg class="mq-mark"><use href="#m4"/></svg>Zoom</span>
+        <span class="mq-item"><svg class="mq-mark"><use href="#m5"/></svg>Asana</span>
+        <span class="mq-item"><svg class="mq-mark"><use href="#m6"/></svg>Trello</span>
+        <span class="mq-item"><svg class="mq-mark"><use href="#m1"/></svg>Vimeo</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== FEATURES ===================== -->
+<section class="section" id="caracteristicas">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Características</span>
+      <h2>Todo lo que necesitas para conectar</h2>
+      <p>Publicaciones, historias, mensajes y comunidades. Las herramientas que esperas de una red social, hechas para usarse sin fricción.</p>
+    </div>
+    <div class="features-grid">
+      <article class="feature reveal">
+        <span class="f-ico"><svg class="icon"><use href="#i-photo"/></svg></span>
+        <h3>Publicaciones</h3>
+        <p>Comparte fotos, videos y texto. Publica lo que quieras en segundos y deja que tu gente reaccione al instante.</p>
+      </article>
+      <article class="feature reveal d1">
+        <span class="f-ico"><svg class="icon"><use href="#i-stories"/></svg></span>
+        <h3>Historias</h3>
+        <p>Cuenta tu día con historias que se desvanecen en 24 horas. Sin presión, solo el momento.</p>
+      </article>
+      <article class="feature reveal d2">
+        <span class="f-ico"><svg class="icon"><use href="#i-message"/></svg></span>
+        <h3>Mensajes</h3>
+        <p>Habla en privado o en grupo con mensajería cifrada de extremo a extremo. Rápida, fluida y segura.</p>
+      </article>
+      <article class="feature reveal">
+        <span class="f-ico"><svg class="icon"><use href="#i-users"/></svg></span>
+        <h3>Comunidades</h3>
+        <p>Únete a grupos sobre lo que te apasiona o crea el tuyo. Encuentra personas con tus mismos intereses.</p>
+      </article>
+      <article class="feature reveal d1">
+        <span class="f-ico"><svg class="icon"><use href="#i-trend"/></svg></span>
+        <h3>Tendencias</h3>
+        <p>Descubre lo que está pasando ahora. Explora los temas del momento y súmate a la conversación.</p>
+      </article>
+      <article class="feature reveal d2">
+        <span class="f-ico"><svg class="icon"><use href="#i-user"/></svg></span>
+        <h3>Tu perfil</h3>
+        <p>Un espacio que te representa. Personalízalo a tu gusto y decide siempre quién puede verte.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== BENEFITS ===================== -->
+<section class="section alt">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Por qué Cloudix</span>
+      <h2>Diseñada para conexiones reales</h2>
+      <p>Una red pensada para las personas, no para retenerte a la fuerza. Simple, rápida y respetuosa con tu tiempo.</p>
+    </div>
+    <div class="benefits-grid">
+      <div class="benefit reveal">
+        <span class="b-ico"><svg class="icon"><use href="#i-bolt"/></svg></span>
+        <h3>Rápida y ligera</h3>
+        <p>Cloudix abre al instante. Sin pantallas de carga ni esperas: entras y ya estás dentro.</p>
+      </div>
+      <div class="benefit reveal d1">
+        <span class="b-ico"><svg class="icon"><use href="#i-noads"/></svg></span>
+        <h3>Sin ruido</h3>
+        <p>Un feed claro y ordenado. Ves lo que te importa, sin anuncios invasivos que interrumpen.</p>
+      </div>
+      <div class="benefit reveal d2">
+        <span class="b-ico"><svg class="icon"><use href="#i-sliders"/></svg></span>
+        <h3>Tú tienes el control</h3>
+        <p>Ajustes sencillos para decidir qué compartes, con quién y cómo te encuentran los demás.</p>
+      </div>
+      <div class="benefit reveal d3">
+        <span class="b-ico"><svg class="icon"><use href="#i-devices"/></svg></span>
+        <h3>Para cada dispositivo</h3>
+        <p>Web, iOS y Android con la misma experiencia. Continúa donde lo dejaste, siempre.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== COMMUNITIES ===================== -->
+<section class="section" id="comunidades">
+  <div class="wrap">
+    <div class="comm-grid">
+      <div class="comm-copy reveal">
+        <span class="eyebrow">Grupos y comunidades</span>
+        <h3 style="margin-top:16px">Encuentra tu comunidad</h3>
+        <p>Desde fotografía hasta gaming, en Cloudix hay un espacio para cada interés. Únete a comunidades, participa en conversaciones y crea tu propio grupo con la gente que comparte lo que te gusta.</p>
+        <div class="chips" role="list" aria-label="Comunidades populares">
+          <span class="chip" role="listitem"><span class="c-dot" aria-hidden="true"></span>Fotografía</span>
+          <span class="chip" role="listitem"><span class="c-dot" aria-hidden="true"></span>Viajes</span>
+          <span class="chip" role="listitem"><span class="c-dot" aria-hidden="true"></span>Gaming</span>
+          <span class="chip" role="listitem"><span class="c-dot" aria-hidden="true"></span>Música</span>
+          <span class="chip" role="listitem"><span class="c-dot" aria-hidden="true"></span>Arte digital</span>
+          <span class="chip" role="listitem"><span class="c-dot" aria-hidden="true"></span>Cocina</span>
+          <span class="chip" role="listitem"><span class="c-dot" aria-hidden="true"></span>Deporte</span>
+          <span class="chip" role="listitem"><span class="c-dot" aria-hidden="true"></span>Tecnología</span>
+        </div>
+      </div>
+      <div class="comm-visual reveal d1">
+        <div class="chat-demo" role="img" aria-label="Demostración animada de un chat de grupo de Cloudix llamado Devs en español, con 12.480 miembros, donde las personas envían mensajes sobre programación y se responden entre ellas.">
+          <div class="chat-head">
+            <span class="ch-ava" aria-hidden="true"><svg class="icon"><use href="#i-code"/></svg></span>
+            <span class="ch-meta">
+              <b>Devs en español</b>
+              <small><span class="live-dot" aria-hidden="true"></span>12.480 miembros</small>
+            </span>
+            <svg class="ch-more" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="19" cy="12" r="1.5" fill="currentColor"/></svg>
+          </div>
+          <div class="chat-feed" id="chatFeed" aria-hidden="true"></div>
+          <div class="chat-composer" aria-hidden="true">
+            <span class="cc-input">Escribe un mensaje</span>
+            <span class="cc-send"><svg class="icon"><use href="#i-send"/></svg></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== SECURITY ===================== -->
+<section class="section alt" id="seguridad">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Seguridad y privacidad</span>
+      <h2>Tu privacidad, siempre primero</h2>
+      <p>Tus datos son tuyos. Cloudix pone el control en tus manos con herramientas claras y protección de verdad.</p>
+    </div>
+    <div class="sec-grid">
+      <article class="sec-card reveal">
+        <span class="s-ico"><svg class="icon"><use href="#i-lock"/></svg></span>
+        <h3>Cifrado de extremo a extremo</h3>
+        <p>Tus mensajes privados solo los leen tú y la persona que los recibe. Nadie más.</p>
+      </article>
+      <article class="sec-card reveal d1">
+        <span class="s-ico"><svg class="icon"><use href="#i-eye"/></svg></span>
+        <h3>Tú decides quién te ve</h3>
+        <p>Perfil público o privado y control total sobre quién puede ver cada publicación.</p>
+      </article>
+      <article class="sec-card reveal d2">
+        <span class="s-ico"><svg class="icon"><use href="#i-shield"/></svg></span>
+        <h3>Nunca vendemos tus datos</h3>
+        <p>Tu información es tuya y así se queda. No la vendemos ni la cedemos a terceros.</p>
+      </article>
+      <article class="sec-card reveal d3">
+        <span class="s-ico"><svg class="icon"><use href="#i-sliders"/></svg></span>
+        <h3>Controles claros</h3>
+        <p>Privacidad, bloqueos y notificaciones en ajustes fáciles de entender y de cambiar.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== CTA ===================== -->
+<section class="section" id="registro">
+  <div class="wrap">
+    <div class="cta-band reveal">
+      <div class="inner">
+        <h2>Únete a Cloudix hoy</h2>
+        <p>Crea tu cuenta gratis y empieza a compartir, descubrir y conectar en menos de un minuto.</p>
+        <div class="cta-actions">
+          <a href="auth.html?mode=register" class="btn btn--primary btn--lg">Crear cuenta</a>
+          <a href="auth.html" class="btn btn--ghost btn--lg">Iniciar sesión</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- ===================== FOOTER ===================== -->
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="foot-top">
+      <div class="foot-brand">
+        <a href="#top" class="brand" aria-label="Cloudix, inicio">
+          <span class="brand-mark" aria-hidden="true"><svg class="icon"><use href="#i-chat"/></svg></span>
+          Cloudix
+        </a>
+        <p>La red social donde compartes tu mundo, descubres tendencias y conectas con quien te importa.</p>
+        <div class="stores">
+          <a href="#registro" class="store-btn" aria-label="Descargar en la App Store">
+            <svg class="icon icon--fill"><use href="#i-apple"/></svg>
+            <span class="st-txt"><small>Descárgala en</small><b>App Store</b></span>
+          </a>
+          <a href="#registro" class="store-btn" aria-label="Disponible en Google Play">
+            <svg class="icon"><use href="#i-gplay"/></svg>
+            <span class="st-txt"><small>Disponible en</small><b>Google Play</b></span>
+          </a>
+        </div>
+      </div>
+      <div class="foot-col">
+        <h4>Producto</h4>
+        <a href="#caracteristicas">Características</a>
+        <a href="#caracteristicas">Historias</a>
+        <a href="#comunidades">Comunidades</a>
+        <a href="#caracteristicas">Mensajes</a>
+        <a href="#caracteristicas">Novedades</a>
+      </div>
+      <div class="foot-col">
+        <h4>Descubre</h4>
+        <a href="#comunidades">Tendencias</a>
+        <a href="#comunidades">Explorar</a>
+        <a href="#comunidades">Creadores</a>
+        <a href="#comunidades">Eventos</a>
+      </div>
+      <div class="foot-col">
+        <h4>Empresa</h4>
+        <a href="#top">Sobre Cloudix</a>
+        <a href="#top">Empleo</a>
+        <a href="#top">Prensa</a>
+        <a href="#top">Contacto</a>
+      </div>
+      <div class="foot-col">
+        <h4>Legal</h4>
+        <a href="#seguridad">Privacidad</a>
+        <a href="#seguridad">Términos</a>
+        <a href="#seguridad">Cookies</a>
+        <a href="#seguridad">Directrices</a>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span class="copy">© <span id="year">2026</span> Cloudix · Hecho para conectar</span>
+      <div class="socials" aria-label="Redes sociales de Cloudix">
+        <a href="#top" aria-label="Cloudix en X"><svg class="icon"><use href="#i-s-x"/></svg></a>
+        <a href="#top" aria-label="Cloudix en Instagram"><svg class="icon"><use href="#i-s-ig"/></svg></a>
+        <a href="#top" aria-label="Cloudix en YouTube"><svg class="icon"><use href="#i-s-yt"/></svg></a>
+        <a href="#top" aria-label="Cloudix en LinkedIn"><svg class="icon"><use href="#i-s-in"/></svg></a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<noscript>
+  <style>.reveal{opacity:1!important;transform:none!important}</style>
+</noscript>
+<script src="js/main.js?v=20260711c"></script>
 </body>
 </html>
