@@ -1,6 +1,10 @@
-// GET /  -> metadatos y health check de la API.
-import { success, errorResponse } from "./utils/response.js";
-import { getSql } from "./database/client.js";
+// GET /api  -> metadatos y health check de la API.
+//
+// (Antes vivía en functions/index.js, es decir en "/", pero eso interceptaba
+//  la raíz y mostraba el JSON en lugar de public/index.html. Se movió a /api
+//  para dejar "/" a la página web estática.)
+import { success } from "../utils/response.js";
+import { getSql } from "../database/client.js";
 
 export async function onRequestGet(context) {
     const { env } = context;
@@ -19,6 +23,7 @@ export async function onRequestGet(context) {
         runtime: "cloudflare-pages-functions",
         database: db,
         endpoints: [
+            "/api/login", "/api/record", "/api/recover/password",
             "/auth", "/users", "/posts", "/comments", "/reactions", "/stories",
             "/follows", "/groups", "/communities", "/messages", "/notifications",
             "/search", "/upload", "/admin",
