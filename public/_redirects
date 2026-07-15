@@ -1,0 +1,6 @@
+# Cloudflare Pages — rutas limpias (sin .html)
+# El status 200 = rewrite: sirve el archivo pero mantiene la URL en el navegador,
+# para que auth.js detecte el modo (login/register) a partir del pathname.
+
+/login      /auth.html    200
+/register   /auth.html    200
