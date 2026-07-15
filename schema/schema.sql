@@ -126,7 +126,8 @@ CREATE TABLE IF NOT EXISTS stories (
     expires_at TIMESTAMPTZ NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-CREATE INDEX IF NOT EXISTS idx_stories_active ON stories (expires_at) WHERE expires_at > NOW();
+CREATE INDEX IF NOT EXISTS idx_stories_expires ON stories (expires_at);
+CREATE INDEX IF NOT EXISTS idx_stories_author  ON stories (author_id, created_at DESC);
 
 -- ---------------------------- GROUPS ---------------------------
 CREATE TABLE IF NOT EXISTS groups (

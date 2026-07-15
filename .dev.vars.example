@@ -12,3 +12,7 @@ DATABASE_URL="postgresql://USER:PASSWORD@HOST/DB?sslmode=require"
 
 # Clave para firmar JWT (HS256). Usa una cadena aleatoria de >= 32 chars.
 JWT_SECRET="cambia-esto-por-una-clave-larga-y-aleatoria-de-32-o-mas"
+
+# Secreto para la tarea de limpieza de historias (POST /stories/cleanup).
+# Debe coincidir con el que use el planificador (GitHub Actions / cron).
+CRON_SECRET="otra-cadena-aleatoria-para-el-cron-de-limpieza"

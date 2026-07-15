@@ -1,0 +1,28 @@
+name: Stories cleanup
+
+# Tarea programada que elimina las historias vencidas (>24h).
+# La visibilidad ya se corta al instante por la consulta (expires_at > NOW());
+# esto solo hace la limpieza física para mantener la tabla ligera.
+#
+# Configura estos secretos del repositorio (Settings -> Secrets and variables -> Actions):
+#   STORIES_CLEANUP_URL  ->  https://TU-PROYECTO.pages.dev/stories/cleanup
+#   STORIES_CRON_SECRET  ->  el mismo valor que CRON_SECRET en Cloudflare Pages
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"   # cada 15 minutos
+  workflow_dispatch: {}        # permite ejecutarlo manualmente
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Purgar historias expiradas
+        env:
+          CLEANUP_URL: ${{ secrets.STORIES_CLEANUP_URL }}
+          CRON_SECRET: ${{ secrets.STORIES_CRON_SECRET }}
+        run: |
+          if [ -z "$CLEANUP_URL" ] || [ -z "$CRON_SECRET" ]; then
+            echo "Faltan los secretos STORIES_CLEANUP_URL / STORIES_CRON_SECRET."; exit 1
+          fi
+          curl -fsS -X POST "$CLEANUP_URL" -H "X-Cron-Secret: $CRON_SECRET"
