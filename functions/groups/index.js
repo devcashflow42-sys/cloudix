@@ -44,5 +44,20 @@ export async function onRequestPost(context) {
     await sql`
         INSERT INTO group_members (group_id, user_id, role)
         VALUES (${group.id}, ${user.id}, 'owner')`;
+
+    // Añade como miembros SOLO a los amigos indicados (personas que el creador sigue).
+    const memberIds = Array.isArray(body.memberIds)
+        ? [...new Set(body.memberIds)].filter(is.uuid) : [];
+    if (memberIds.length) {
+        await sql`
+            INSERT INTO group_members (group_id, user_id, role)
+            SELECT ${group.id}, f.following_id, 'member'
+            FROM follows f
+            WHERE f.follower_id = ${user.id} AND f.following_id = ANY(${memberIds}::uuid[])
+            ON CONFLICT DO NOTHING`;
+        const cnt = await sql`SELECT COUNT(*)::int AS n FROM group_members WHERE group_id = ${group.id}`;
+        await sql`UPDATE groups SET members_count = ${cnt[0].n} WHERE id = ${group.id}`;
+        group.members_count = cnt[0].n;
+    }
     return created({ group }, "Grupo creado.");
 }

@@ -35,5 +35,20 @@ export async function onRequestPost(context) {
     await sql`
         INSERT INTO community_members (community_id, user_id, role)
         VALUES (${community.id}, ${user.id}, 'founder')`;
+
+    // Añade como miembros SOLO a los amigos indicados (personas que el creador sigue).
+    const memberIds = Array.isArray(body.memberIds)
+        ? [...new Set(body.memberIds)].filter(is.uuid) : [];
+    if (memberIds.length) {
+        await sql`
+            INSERT INTO community_members (community_id, user_id, role)
+            SELECT ${community.id}, f.following_id, 'member'
+            FROM follows f
+            WHERE f.follower_id = ${user.id} AND f.following_id = ANY(${memberIds}::uuid[])
+            ON CONFLICT DO NOTHING`;
+        const cnt = await sql`SELECT COUNT(*)::int AS n FROM community_members WHERE community_id = ${community.id}`;
+        await sql`UPDATE communities SET members_count = ${cnt[0].n} WHERE id = ${community.id}`;
+        community.members_count = cnt[0].n;
+    }
     return created({ community }, "Comunidad creada.");
 }

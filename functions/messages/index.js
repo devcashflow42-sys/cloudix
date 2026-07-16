@@ -4,7 +4,7 @@ import { requireAuth } from "../middleware/auth.js";
 import { getSql } from "../database/client.js";
 import { readJson, assert, is, parsePagination, paginationMeta } from "../utils/validate.js";
 import { created, paginated } from "../utils/response.js";
-import { BadRequestError, NotFoundError } from "../utils/errors.js";
+import { BadRequestError, NotFoundError, ForbiddenError } from "../utils/errors.js";
 
 export async function onRequestGet(context) {
     const user = await requireAuth(context);
@@ -46,6 +46,14 @@ export async function onRequestPost(context) {
 
     const target = await sql`SELECT id FROM users WHERE id = ${body.recipientId} AND is_active = TRUE LIMIT 1`;
     if (!target.length) throw new NotFoundError("Destinatario no encontrado.");
+
+    // Regla social: solo puedes enviar mensajes a personas que sigues.
+    const follows = await sql`
+        SELECT 1 FROM follows
+        WHERE follower_id = ${user.id} AND following_id = ${body.recipientId} LIMIT 1`;
+    if (!follows.length) {
+        throw new ForbiddenError("Solo puedes enviar mensajes a personas que sigues.");
+    }
 
     const rows = await sql`
         INSERT INTO messages (sender_id, recipient_id, content)
