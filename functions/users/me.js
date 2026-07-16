@@ -6,8 +6,19 @@ import { readJson } from "../utils/validate.js";
 import { success } from "../utils/response.js";
 
 export async function onRequestGet(context) {
-    const user = await requireAuth(context);
-    return success({ user }, { message: "Perfil obtenido." });
+    const auth = await requireAuth(context);
+    const sql = getSql(context.env);
+    // Perfil completo (con bio) + contadores de publicaciones/seguidores/seguidos.
+    const rows = await sql`
+        SELECT u.id, u.username, u.email, u.display_name, u.bio, u.avatar_url,
+               u.role, u.is_verified, u.created_at,
+               (SELECT COUNT(*) FROM posts   WHERE author_id  = u.id AND deleted_at IS NULL)::int AS posts,
+               (SELECT COUNT(*) FROM follows WHERE following_id = u.id)::int AS followers,
+               (SELECT COUNT(*) FROM follows WHERE follower_id  = u.id)::int AS following
+        FROM users u
+        WHERE u.id = ${auth.id}
+        LIMIT 1`;
+    return success({ user: rows[0] || auth }, { message: "Perfil obtenido." });
 }
 
 export async function onRequestPatch(context) {
