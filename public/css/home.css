@@ -675,3 +675,38 @@ svg { display: block; }
 }
 .sc-follow:active{ opacity:.85; }
 .sc-follow.following{ background:#eef0f4; color:#333; border:1px solid #e2e5ea; }
+
+/* ==============================================================
+   Publicaciones: feed, tarjeta, composer y editor de imagen
+   ============================================================== */
+.feed{ list-style:none; margin:0; padding:0 0 90px; max-width:600px; }
+@media (min-width:1025px){ .feed{ margin:0 auto; } }
+.post{ background:#fff; border-bottom:1px solid #eceef1; padding:14px 16px; }
+.post-head{ display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+.post-av{ width:40px; height:40px; border-radius:50%; background:#4a90e2; color:#fff; flex:0 0 auto;
+  display:flex; align-items:center; justify-content:center; font-weight:700; background-size:cover; background-position:center; }
+.post-id{ display:flex; flex-direction:column; min-width:0; }
+.post-id b{ font-size:14px; color:#111; font-weight:700; }
+.post-id span{ font-size:12px; color:#8b909a; }
+.post-text{ font-size:14.5px; color:#1a1a1a; line-height:1.45; white-space:pre-wrap; word-wrap:break-word; }
+.post-img{ display:block; width:100%; border-radius:14px; margin:10px 0 4px; background:#f2f4f8; }
+.post-actions{ display:flex; align-items:center; gap:18px; margin-top:8px; }
+.post-btn{ display:inline-flex; align-items:center; gap:6px; background:none; border:0; cursor:pointer;
+  color:#5b616b; font:inherit; font-size:13px; font-weight:600; padding:4px 0; }
+.post-btn svg{ width:22px; height:22px; }
+.post-btn.liked{ color:#e0245e; }
+.post-btn.liked svg{ fill:#e0245e; stroke:#e0245e; }
+
+/* Composer / editor (usa la hoja .sc-*) */
+.pc-tools{ display:flex; gap:10px; margin:4px 0 10px; }
+.pc-tool{ display:inline-flex; align-items:center; gap:7px; background:#f2f4f8; border:0; border-radius:11px;
+  padding:9px 13px; font:inherit; font-size:13px; font-weight:600; color:#333; cursor:pointer; }
+.pc-thumb{ position:relative; margin:6px 0 4px; }
+.pc-thumb img{ width:100%; border-radius:14px; display:block; }
+.pc-thumb .pc-x{ position:absolute; top:8px; right:8px; width:30px; height:30px; border-radius:50%;
+  background:rgba(0,0,0,.55); color:#fff; border:0; font-size:16px; cursor:pointer; }
+.pc-edit-canvas{ width:100%; aspect-ratio:1/1; border-radius:14px; background:#000; object-fit:cover; }
+.pc-filters{ display:flex; gap:8px; overflow-x:auto; padding:10px 0; }
+.pc-filter{ flex:0 0 auto; padding:7px 12px; border-radius:10px; border:1px solid #e2e5ea; background:#fff;
+  font:inherit; font-size:12px; font-weight:700; color:#333; cursor:pointer; }
+.pc-filter.on{ border-color:#3d7bfa; color:#3d7bfa; background:#eef3ff; }

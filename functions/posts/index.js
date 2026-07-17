@@ -6,7 +6,8 @@ import { readJson, assert, is, parsePagination, paginationMeta } from "../utils/
 import { created, paginated } from "../utils/response.js";
 
 export async function onRequestGet(context) {
-    await optionalAuth(context); // el feed es público; auth opcional para futuras personalizaciones
+    const me = await optionalAuth(context); // el feed es público; si hay sesión marcamos "liked"
+    const meId = me ? me.id : null;
     const url = new URL(context.request.url);
     const { page, limit, offset } = parsePagination(url);
     const sql = getSql(context.env);
@@ -14,7 +15,11 @@ export async function onRequestGet(context) {
     const totalRows = await sql`SELECT COUNT(*)::int AS total FROM posts WHERE deleted_at IS NULL AND visibility = 'public'`;
     const rows = await sql`
         SELECT p.id, p.content, p.media, p.visibility, p.likes_count, p.comments_count, p.created_at,
-               u.id AS author_id, u.username, u.display_name, u.avatar_url
+               u.id AS author_id, u.username, u.display_name, u.avatar_url,
+               CASE WHEN ${meId}::uuid IS NULL THEN FALSE
+                    ELSE EXISTS (SELECT 1 FROM reactions r
+                                 WHERE r.target_type = 'post' AND r.target_id = p.id AND r.user_id = ${meId}::uuid)
+               END AS liked
         FROM posts p
         JOIN users u ON u.id = p.author_id
         WHERE p.deleted_at IS NULL AND p.visibility = 'public'
