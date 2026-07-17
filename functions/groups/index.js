@@ -3,12 +3,21 @@
 import { requireAuth, optionalAuth } from "../middleware/auth.js";
 import { getSql } from "../database/client.js";
 import { readJson, assert, is, parsePagination, paginationMeta } from "../utils/validate.js";
-import { created, paginated } from "../utils/response.js";
+import { created, paginated, success } from "../utils/response.js";
 import { slugify } from "../utils/slug.js";
+import * as groupService from "../services/groupService.js";
 
 export async function onRequestGet(context) {
-    await optionalAuth(context);
+    const me = await optionalAuth(context);
     const url = new URL(context.request.url);
+
+    // ?mine=true -> grupos a los que pertenezco (con mi rol e icono)
+    if (url.searchParams.get("mine") === "true") {
+        if (!me) return success({ groups: [] }, { message: "Sin sesión." });
+        const groups = await groupService.listMine(context.env, me.id);
+        return success({ groups }, { message: "Mis grupos." });
+    }
+
     const { page, limit, offset } = parsePagination(url);
     const search = (url.searchParams.get("search") || "").trim();
     const sql = getSql(context.env);
@@ -37,9 +46,9 @@ export async function onRequestPost(context) {
     const sql = getSql(context.env);
 
     const rows = await sql`
-        INSERT INTO groups (owner_id, name, slug, description, privacy, members_count)
-        VALUES (${user.id}, ${body.name}, ${slugify(body.name)}, ${body.description || null}, ${privacy}, 1)
-        RETURNING id, owner_id, name, slug, description, privacy, members_count, created_at`;
+        INSERT INTO groups (owner_id, name, slug, description, privacy, icon_url, members_count)
+        VALUES (${user.id}, ${body.name}, ${slugify(body.name)}, ${body.description || null}, ${privacy}, ${body.iconUrl || null}, 1)
+        RETURNING id, owner_id, name, slug, description, icon_url, privacy, members_count, created_at`;
     const group = rows[0];
     await sql`
         INSERT INTO group_members (group_id, user_id, role)

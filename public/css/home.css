@@ -773,3 +773,25 @@ svg { display: block; }
 .mm-send{ width:44px; height:44px; border-radius:50%; border:0; background:#3d7bfa; color:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; flex:0 0 auto; }
 .mm-send:active{ opacity:.85; }
 .mm-empty{ text-align:center; color:#8b909a; font-size:13px; padding:34px 16px; }
+
+/* ==============================================================
+   Grupos/Comunidades: detalle, roles y acciones
+   ============================================================== */
+.gc-dhead{ display:flex; align-items:center; gap:12px; margin:2px 0 14px; }
+.gc-dav{ width:56px; height:56px; border-radius:16px; background:#4a90e2; color:#fff; flex:0 0 auto;
+  display:flex; align-items:center; justify-content:center; font-weight:800; font-size:22px; background-size:cover; background-position:center; }
+.gc-dname{ font-size:18px; font-weight:800; color:#111; }
+.gc-dsub{ font-size:13px; color:#8b909a; }
+.gc-actions{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px; }
+.gc-abtn{ flex:1 1 auto; min-width:120px; height:44px; border:1px solid #e2e5ea; border-radius:12px; background:#fff;
+  font:inherit; font-size:14px; font-weight:700; color:#222; cursor:pointer; }
+.gc-abtn:active{ opacity:.8; }
+.gc-abtn.primary{ background:#3d7bfa; color:#fff; border-color:#3d7bfa; }
+.gc-abtn.danger{ color:#e0245e; border-color:#f2c9d5; }
+.gc-mng{ background:none; border:0; font-size:20px; color:#8b909a; cursor:pointer; padding:0 6px; flex:0 0 auto; }
+.gc-sender{ display:block; font-size:11px; font-weight:700; opacity:.7; margin-bottom:2px; }
+
+/* selector de icono al crear grupo/comunidad */
+.sc-namerow{ display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+.sc-iconpick{ width:52px; height:52px; border-radius:14px; border:1.5px dashed #cfd4dd; background:#f6f7f9;
+  color:#8b909a; font-size:22px; cursor:pointer; flex:0 0 auto; background-size:cover; background-position:center; }

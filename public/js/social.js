@@ -206,10 +206,31 @@
     sheet.innerHTML = "";
     sheet.appendChild(el("div", "sc-grip"));
     sheet.appendChild(el("h3", "sc-title", isGroup ? "Crear grupo" : "Crear comunidad"));
+
+    // Fila: icono + nombre
+    var iconUrl = null;
+    var nameRow = el("div", "sc-namerow");
+    var iconBtn = el("button", "sc-iconpick", "＋"); iconBtn.type = "button"; iconBtn.title = "Icono";
+    var fileIn = el("input"); fileIn.type = "file"; fileIn.accept = "image/*"; fileIn.style.display = "none";
     var name = el("input", "sc-input"); name.type = "text";
     name.placeholder = isGroup ? "Nombre del grupo" : "Nombre de la comunidad";
-    name.maxLength = 150;
-    sheet.appendChild(name);
+    name.maxLength = 150; name.style.margin = "0"; name.style.flex = "1";
+    iconBtn.addEventListener("click", function () { fileIn.click(); });
+    fileIn.addEventListener("change", function () {
+      var file = fileIn.files && fileIn.files[0]; if (!file) return;
+      var img = new Image();
+      img.onload = function () {
+        var side = Math.min(img.naturalWidth, img.naturalHeight);
+        var cv = document.createElement("canvas"); cv.width = 256; cv.height = 256;
+        var ctx = cv.getContext("2d");
+        ctx.drawImage(img, (img.naturalWidth - side) / 2, (img.naturalHeight - side) / 2, side, side, 0, 0, 256, 256);
+        iconUrl = cv.toDataURL("image/jpeg", 0.7);
+        iconBtn.textContent = ""; iconBtn.style.backgroundImage = "url('" + iconUrl + "')";
+      };
+      img.src = URL.createObjectURL(file);
+    });
+    nameRow.appendChild(iconBtn); nameRow.appendChild(fileIn); nameRow.appendChild(name);
+    sheet.appendChild(nameRow);
     sheet.appendChild(el("div", "sc-title", "Añadir amigos"));
     var list = el("ul", "sc-list"); sheet.appendChild(list);
     var create = el("button", "sc-primary", isGroup ? "Crear grupo" : "Crear comunidad");
@@ -244,16 +265,20 @@
         await api(isGroup ? "/groups" : "/communities", {
           method: "POST",
           headers: authHeaders({ "Content-Type": "application/json" }),
-          body: JSON.stringify({ name: name.value.trim(), memberIds: Object.keys(selected) }),
+          body: JSON.stringify({ name: name.value.trim(), iconUrl: iconUrl, memberIds: Object.keys(selected) }),
         });
         closeSheet();
         toast(isGroup ? "Grupo creado." : "Comunidad creada.");
+        if (window.Groups && window.Groups.reload) window.Groups.reload();
       } catch (e) {
         create.disabled = false; create.textContent = isGroup ? "Crear grupo" : "Crear comunidad";
         toast(e.message);
       }
     });
   }
+
+  // Expuesto para que groups.js abra el creador desde los enlaces de estado vacío.
+  window.Social = { openCreate: openCreate, openMessagePicker: openMessagePicker };
 
   updateFab();
 })();
