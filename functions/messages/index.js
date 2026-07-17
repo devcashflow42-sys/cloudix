@@ -3,16 +3,42 @@
 import { requireAuth } from "../middleware/auth.js";
 import { getSql } from "../database/client.js";
 import { readJson, assert, is, parsePagination, paginationMeta } from "../utils/validate.js";
-import { created, paginated } from "../utils/response.js";
+import { created, paginated, success } from "../utils/response.js";
 import { BadRequestError, NotFoundError, ForbiddenError } from "../utils/errors.js";
 
 export async function onRequestGet(context) {
     const user = await requireAuth(context);
     const url = new URL(context.request.url);
     const other = url.searchParams.get("withUserId");
-    if (!is.uuid(other)) throw new BadRequestError("withUserId es requerido y debe ser un UUID.");
-    const { page, limit, offset } = parsePagination(url);
     const sql = getSql(context.env);
+
+    // Sin withUserId -> BANDEJA: lista de conversaciones con el último mensaje.
+    if (!other) {
+        const conversations = await sql`
+            SELECT u.id, u.username, u.display_name, u.avatar_url,
+                   lm.content AS last_message, lm.created_at AS last_at,
+                   (lm.sender_id = ${user.id}) AS last_mine,
+                   (SELECT COUNT(*) FROM messages m2
+                    WHERE m2.sender_id = u.id AND m2.recipient_id = ${user.id} AND m2.read_at IS NULL)::int AS unread
+            FROM (
+                SELECT DISTINCT ON (partner_id) partner_id, id, content, created_at, sender_id
+                FROM (
+                    SELECT CASE WHEN sender_id = ${user.id} THEN recipient_id ELSE sender_id END AS partner_id,
+                           id, content, created_at, sender_id
+                    FROM messages
+                    WHERE sender_id = ${user.id} OR recipient_id = ${user.id}
+                ) c
+                ORDER BY partner_id, created_at DESC
+            ) lm
+            JOIN users u ON u.id = lm.partner_id
+            ORDER BY lm.created_at DESC
+            LIMIT 100`;
+        return success({ conversations }, { message: "Conversaciones obtenidas." });
+    }
+
+    // Con withUserId -> HILO de la conversación 1:1.
+    if (!is.uuid(other)) throw new BadRequestError("withUserId debe ser un UUID.");
+    const { page, limit, offset } = parsePagination(url);
 
     const totalRows = await sql`
         SELECT COUNT(*)::int AS total FROM messages

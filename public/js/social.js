@@ -158,7 +158,13 @@
         }
         friends.forEach(function (f) {
           var row = friendRow(f, false);
-          row.addEventListener("click", function () { composeTo(f); });
+          row.addEventListener("click", function () {
+            // Abre el hilo de chat real (messages.js); si no está, usa el compositor simple.
+            if (window.Messages && window.Messages.openThread) {
+              closeSheet();
+              window.Messages.openThread({ id: f.id, name: f.display_name || f.username, avatar_url: f.avatar_url });
+            } else { composeTo(f); }
+          });
           list.appendChild(row);
         });
       } catch (e) { list.innerHTML = '<div class="sc-empty">' + esc(e.message) + "</div>"; }
