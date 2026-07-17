@@ -5,7 +5,8 @@ import { success } from "../utils/response.js";
 import { BadRequestError } from "../utils/errors.js";
 
 export async function onRequestGet(context) {
-    await optionalAuth(context);
+    const me = await optionalAuth(context);
+    const meId = me ? me.id : null;
     const url = new URL(context.request.url);
     const q = (url.searchParams.get("q") || "").trim();
     const type = url.searchParams.get("type") || "all";
@@ -15,11 +16,19 @@ export async function onRequestGet(context) {
 
     const result = {};
     if (type === "all" || type === "users") {
+        // is_following indica si el usuario autenticado ya sigue a cada resultado.
+        // También se excluye a uno mismo de los resultados.
         result.users = await sql`
-            SELECT id, username, display_name, avatar_url, is_verified
-            FROM users
-            WHERE is_active = TRUE AND (username ILIKE ${like} OR display_name ILIKE ${like})
-            ORDER BY is_verified DESC, username ASC
+            SELECT u.id, u.username, u.display_name, u.avatar_url, u.is_verified,
+                   CASE WHEN ${meId}::uuid IS NULL THEN FALSE
+                        ELSE EXISTS (SELECT 1 FROM follows f
+                                     WHERE f.follower_id = ${meId}::uuid AND f.following_id = u.id)
+                   END AS is_following
+            FROM users u
+            WHERE u.is_active = TRUE
+              AND (${meId}::uuid IS NULL OR u.id <> ${meId}::uuid)
+              AND (u.username ILIKE ${like} OR u.display_name ILIKE ${like})
+            ORDER BY u.is_verified DESC, u.username ASC
             LIMIT 20`;
     }
     if (type === "all" || type === "posts") {

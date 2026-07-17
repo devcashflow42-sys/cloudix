@@ -90,11 +90,15 @@
     </section>
 
     <section class="page" data-page="search">
-          <div class="empty">
-            <span class="empty-ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><circle cx="11" cy="11" r="7.2"/><line x1="21" y1="21" x2="16.4" y2="16.4"/></svg></span>
-            <span class="empty-title">Busca lo que quieras</span>
-            <span class="empty-sub">Escribe un nombre, un tema o una comunidad para empezar.</span>
-          </div>
+      <div class="sc-search-wrap">
+        <input class="sc-search-input" id="scSearchInput" type="search" placeholder="Buscar personas por nombre o @usuario…" autocomplete="off">
+        <ul class="sc-list" id="scSearchResults"></ul>
+        <div class="empty" id="scSearchEmpty">
+          <span class="empty-ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><circle cx="11" cy="11" r="7.2"/><line x1="21" y1="21" x2="16.4" y2="16.4"/></svg></span>
+          <span class="empty-title">Busca personas</span>
+          <span class="empty-sub">Escribe un nombre o @usuario para encontrar y seguir gente.</span>
+        </div>
+      </div>
     </section>
 
     <section class="page" data-page="chat">
@@ -305,6 +309,7 @@
   <script src="js/home.js"></script>
   <script src="js/profile.js?v=20260716"></script>
   <script src="js/social.js?v=20260716"></script>
+  <script src="js/search.js?v=20260717"></script>
 
 </body>
 </html>
