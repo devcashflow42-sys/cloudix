@@ -868,3 +868,59 @@ svg { display: block; }
   .sc-sheet .sc-tbtn{ background:rgba(255,255,255,.08); color:#eee; }
   .sc-sheet .sc-createbar{ background:linear-gradient(to top, rgba(26,28,36,.96), rgba(26,28,36,.5)); }
 }
+
+/* ==============================================================
+   FEED REDISEÑADO (tarjetas modernas, carrusel, encuesta, acciones)
+   ============================================================== */
+.feed{ list-style:none; margin:0; padding:0 0 90px; max-width:600px; }
+@media (min-width:1025px){ .feed{ margin:0 auto; } }
+.post{ background:#fff; padding:14px 16px 6px; border-bottom:8px solid #f3f4f6; }
+.post-head{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.post-av{ width:42px; height:42px; border-radius:50%; background:#4a90e2; color:#fff; flex:0 0 auto;
+  display:flex; align-items:center; justify-content:center; font-weight:700; background-size:cover; background-position:center; }
+.post-id b{ font-size:14px; color:#111; font-weight:700; }
+.post-id span{ font-size:12px; color:#8b909a; }
+.post-menu{ margin-left:auto; background:none; border:0; color:#8b909a; cursor:pointer; padding:6px; border-radius:50%; flex:0 0 auto; }
+.post-menu:active{ background:#f2f4f8; }
+.post-text{ font-size:14.5px; color:#1a1a1a; line-height:1.5; white-space:pre-wrap; word-wrap:break-word; margin:2px 0 10px; }
+
+.post-media{ margin:6px -16px 10px; position:relative; background:#000; }
+.post-track{ display:flex; overflow-x:auto; scroll-snap-type:x mandatory; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+.post-track::-webkit-scrollbar{ display:none; }
+.post-slide{ flex:0 0 100%; scroll-snap-align:center; }
+.post-slide img,.post-slide video{ width:100%; display:block; max-height:76vh; object-fit:contain; background:#000; }
+.post-dots{ position:absolute; bottom:9px; left:0; right:0; display:flex; gap:5px; justify-content:center; pointer-events:none; }
+.post-dot{ width:6px; height:6px; border-radius:50%; background:rgba(255,255,255,.5); transition:background .2s; }
+.post-dot.on{ background:#fff; }
+.post-count{ position:absolute; top:10px; right:12px; background:rgba(0,0,0,.6); color:#fff; font-size:12px; font-weight:600; padding:3px 9px; border-radius:12px; }
+
+.post-chip{ display:flex; align-items:center; gap:10px; border:1px solid #e9ebef; border-radius:12px; padding:11px 12px; margin:6px 0; text-decoration:none; color:#111; font-size:14px; }
+.post-chip svg{ width:22px; height:22px; color:#3d7bfa; flex:0 0 auto; }
+.post-chip b{ font-weight:700; } .post-chip small{ color:#8b909a; }
+
+.poll{ margin:6px 0 10px; }
+.poll-q{ font-weight:700; font-size:14.5px; margin-bottom:8px; color:#111; }
+.poll-opt{ position:relative; border:1px solid #e2e5ea; border-radius:12px; padding:11px 12px; margin-bottom:8px; cursor:pointer; overflow:hidden; }
+.poll-fill{ position:absolute; inset:0 auto 0 0; height:100%; width:0; background:#eaf1ff; transition:width .5s cubic-bezier(.22,1,.36,1); }
+.poll-opt.mine .poll-fill{ background:#cfe0ff; }
+.poll-row{ position:relative; z-index:1; display:flex; justify-content:space-between; font-size:14px; color:#111; }
+.poll-total{ font-size:12px; color:#8b909a; margin-top:2px; }
+
+.post-actions{ display:flex; align-items:center; gap:4px; margin-top:4px; }
+.post-btn{ display:inline-flex; align-items:center; gap:6px; background:none; border:0; cursor:pointer; color:#333; font:inherit; font-size:13px; font-weight:600; padding:7px; border-radius:50%; }
+.post-btn .post-n{ padding-right:4px; }
+.post-btn svg{ width:24px; height:24px; }
+.post-btn:active{ transform:scale(.86); } .post-btn{ transition:transform .12s ease; }
+.post-btn.liked{ color:#ed4956; } .post-btn.liked svg{ fill:#ed4956; stroke:#ed4956; }
+.post-btn.saved{ color:#111; } .post-btn.saved svg{ fill:#111; }
+.post-spacer{ flex:1; }
+
+/* Composer moderno */
+.pc-opts{ display:flex; gap:8px; flex-wrap:wrap; margin:6px 0 10px; }
+.pc-photos{ display:flex; gap:8px; overflow-x:auto; padding:4px 0; scrollbar-width:none; }
+.pc-photos::-webkit-scrollbar{ display:none; }
+.pc-photo{ position:relative; flex:0 0 auto; }
+.pc-photo img{ width:84px; height:84px; object-fit:cover; border-radius:12px; display:block; }
+.pc-photo .pc-x{ position:absolute; top:-6px; right:-6px; width:24px; height:24px; border-radius:50%; background:#111; color:#fff; border:2px solid #fff; font-size:13px; cursor:pointer; }
+.pc-poll{ border:1px solid #e2e5ea; border-radius:14px; padding:12px; margin:8px 0; }
+.pc-poll .sc-input{ margin-bottom:8px; }
