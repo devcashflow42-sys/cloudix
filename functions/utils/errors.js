@@ -52,6 +52,16 @@ export function toErrorResponse(err) {
             return errorResponse("Falta un campo obligatorio.", { code: "NOT_NULL_VIOLATION", status: 400 });
         case "22P02":
             return errorResponse("Formato de dato inválido.", { code: "INVALID_INPUT", status: 400 });
+        case "42P01": // undefined_table
+            return errorResponse(
+                "Falta una tabla en la base de datos. Ejecuta las migraciones (schema.sql) en tu base Neon.",
+                { code: "SCHEMA_INCOMPLETE", status: 503 },
+            );
+        case "42703": // undefined_column
+            return errorResponse(
+                "Falta una columna en la base de datos. Vuelve a ejecutar schema.sql (es idempotente).",
+                { code: "SCHEMA_INCOMPLETE", status: 503 },
+            );
         default:
             return errorResponse("Error interno del servidor.", { code: "INTERNAL_ERROR", status: 500 });
     }
