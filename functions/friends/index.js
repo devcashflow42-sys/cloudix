@@ -15,7 +15,8 @@ export async function onRequestGet(context) {
 
     const rows = q
         ? await sql`
-            SELECT u.id, u.username, u.display_name, u.avatar_url
+            SELECT u.id, u.username, u.display_name, u.avatar_url,
+                   (u.last_login_at > NOW() - INTERVAL '10 minutes') AS online
             FROM follows f
             JOIN users u ON u.id = f.following_id
             WHERE f.follower_id = ${user.id}
@@ -23,7 +24,8 @@ export async function onRequestGet(context) {
             ORDER BY u.display_name NULLS LAST, u.username
             LIMIT 100`
         : await sql`
-            SELECT u.id, u.username, u.display_name, u.avatar_url
+            SELECT u.id, u.username, u.display_name, u.avatar_url,
+                   (u.last_login_at > NOW() - INTERVAL '10 minutes') AS online
             FROM follows f
             JOIN users u ON u.id = f.following_id
             WHERE f.follower_id = ${user.id}

@@ -33,7 +33,7 @@
   var CONFIG = {
     chat:      { icon: ICON.compose,  label: "Nuevo mensaje", mode: "message" },
     mensajes:  { icon: ICON.compose,  label: "Nuevo mensaje", mode: "message" },
-    grupos:    { icon: ICON.groupAdd, label: "Crear grupo",   mode: "group" },
+    grupos:    { icon: ICON.groupAdd, label: "Crear comunidad",   mode: "group" },
     comunidad: { icon: ICON.globeAdd, label: "Crear comunidad", mode: "community" },
   };
 
@@ -84,7 +84,7 @@
   document.body.appendChild(overlay);
   overlay.addEventListener("click", function (e) { if (e.target === overlay) closeSheet(); });
   function openSheet() { overlay.classList.add("open"); }
-  function closeSheet() { overlay.classList.remove("open"); sheet.innerHTML = ""; }
+  function closeSheet() { overlay.classList.remove("open"); sheet.className = "sc-sheet"; sheet.innerHTML = ""; }
 
   // ---- toast ----
   var toastEl = el("div", "sc-toast"); document.body.appendChild(toastEl);
@@ -124,7 +124,7 @@
 
   function emptyFriends(extraHtml) {
     return el("div", "sc-empty",
-      "<b>Aún no sigues a nadie</b>Sigue a personas para poder escribirles o crear grupos con ellas."
+      "<b>Aún no sigues a nadie</b>Sigue a personas para poder escribirles o crear comunidades con ellas."
       + (extraHtml || ""));
   }
 
@@ -200,20 +200,34 @@
     });
   }
 
-  // ---- Flujo: CREAR GRUPO / COMUNIDAD ----
+  var CHECK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+
+  // ---- Pantalla moderna: CREAR COMUNIDAD (estilo Telegram/Instagram) ----
   async function openCreate(kind) {
     var isGroup = kind === "group";
-    sheet.innerHTML = "";
-    sheet.appendChild(el("div", "sc-grip"));
-    sheet.appendChild(el("h3", "sc-title", isGroup ? "Crear grupo" : "Crear comunidad"));
-
-    // Fila: icono + nombre
+    var endpoint = isGroup ? "/groups" : "/communities";
+    var selected = {};   // id -> user
     var iconUrl = null;
+
+    sheet.className = "sc-sheet sc-full";
+    sheet.innerHTML = "";
+
+    // Toolbar fijo
+    var tb = el("div", "sc-toolbar");
+    var back = el("button", "sc-tbtn", '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 5 8 12 15 19"/></svg>');
+    back.type = "button"; back.addEventListener("click", closeCreate);
+    tb.appendChild(back);
+    tb.appendChild(el("div", null, '<div class="sc-tbtitle">Nueva comunidad</div><div class="sc-tbsub">Hasta 2,000,000 de miembros</div>'));
+    sheet.appendChild(tb);
+
+    var scroll = el("div", "sc-scroll");
+    sheet.appendChild(scroll);
+
+    // Icono + nombre
     var nameRow = el("div", "sc-namerow");
-    var iconBtn = el("button", "sc-iconpick", "＋"); iconBtn.type = "button"; iconBtn.title = "Icono";
+    var iconBtn = el("button", "sc-iconpick", "＋"); iconBtn.type = "button";
     var fileIn = el("input"); fileIn.type = "file"; fileIn.accept = "image/*"; fileIn.style.display = "none";
-    var name = el("input", "sc-input"); name.type = "text";
-    name.placeholder = isGroup ? "Nombre del grupo" : "Nombre de la comunidad";
+    var name = el("input", "sc-input"); name.type = "text"; name.placeholder = "Nombre de la comunidad";
     name.maxLength = 150; name.style.margin = "0"; name.style.flex = "1";
     iconBtn.addEventListener("click", function () { fileIn.click(); });
     fileIn.addEventListener("change", function () {
@@ -222,60 +236,116 @@
       img.onload = function () {
         var side = Math.min(img.naturalWidth, img.naturalHeight);
         var cv = document.createElement("canvas"); cv.width = 256; cv.height = 256;
-        var ctx = cv.getContext("2d");
-        ctx.drawImage(img, (img.naturalWidth - side) / 2, (img.naturalHeight - side) / 2, side, side, 0, 0, 256, 256);
+        cv.getContext("2d").drawImage(img, (img.naturalWidth - side) / 2, (img.naturalHeight - side) / 2, side, side, 0, 0, 256, 256);
         iconUrl = cv.toDataURL("image/jpeg", 0.7);
-        iconBtn.textContent = ""; iconBtn.style.backgroundImage = "url('" + iconUrl + "')";
+        iconBtn.textContent = ""; iconBtn.style.backgroundImage = "url('" + iconUrl + "')"; iconBtn.classList.add("anim-pop");
       };
       img.src = URL.createObjectURL(file);
     });
     nameRow.appendChild(iconBtn); nameRow.appendChild(fileIn); nameRow.appendChild(name);
-    sheet.appendChild(nameRow);
-    sheet.appendChild(el("div", "sc-title", "Añadir amigos"));
-    var list = el("ul", "sc-list"); sheet.appendChild(list);
-    var create = el("button", "sc-primary", isGroup ? "Crear grupo" : "Crear comunidad");
-    create.type = "button"; create.disabled = true;
-    sheet.appendChild(create);
-    openSheet();
+    scroll.appendChild(nameRow);
 
-    var selected = {};
+    // Contador + chips de seleccionados
+    var count = el("div", "sc-count", "Seleccionados (0)");
+    var chips = el("div", "sc-chips");
+    scroll.appendChild(count); scroll.appendChild(chips);
+
+    // Buscador
+    var search = el("input", "sc-search-input"); search.type = "search"; search.placeholder = "Buscar personas…";
+    search.style.marginBottom = "6px";
+    scroll.appendChild(search);
+
+    var list = el("ul", "sc-list"); scroll.appendChild(list);
+
+    // Barra crear
+    var bar = el("div", "sc-createbar");
+    var create = el("button", "sc-primary", "Crear comunidad"); create.type = "button"; create.disabled = true;
+    create.style.marginTop = "0";
+    bar.appendChild(create); sheet.appendChild(bar);
+
+    openSheet();
     name.addEventListener("input", function () { create.disabled = !name.value.trim(); });
 
-    try {
-      var friends = await getFriends("");
-      list.innerHTML = "";
-      if (!friends.length) {
-        list.appendChild(el("div", "sc-empty", "Aún no sigues a nadie. Puedes crearlo y añadir amigos más tarde."));
-      } else {
-        friends.forEach(function (f) {
-          var row = friendRow(f, true);
-          row.addEventListener("click", function () {
-            if (selected[f.id]) { delete selected[f.id]; row.classList.remove("sel"); }
-            else { selected[f.id] = true; row.classList.add("sel"); }
-          });
-          list.appendChild(row);
-        });
-      }
-    } catch (e) { list.innerHTML = '<div class="sc-empty">' + esc(e.message) + "</div>"; }
+    function refreshChips() {
+      var ids = Object.keys(selected);
+      count.textContent = "Seleccionados (" + ids.length + ")";
+      chips.innerHTML = "";
+      ids.forEach(function (id) {
+        var u = selected[id];
+        var chip = el("div", "sc-chip anim-pop");
+        var av = el("span", "sc-av"); if (u.avatar_url) av.style.backgroundImage = "url('" + esc(u.avatar_url) + "')"; else av.textContent = (u.display_name || u.username || "?").charAt(0).toUpperCase();
+        var x = el("button", "sc-chip-x", "&times;"); x.type = "button";
+        x.addEventListener("click", function () { delete selected[id]; refreshChips(); paintRows(); });
+        chip.appendChild(av); chip.appendChild(x);
+        chip.appendChild(el("span", null, esc(u.display_name || u.username)));
+        chips.appendChild(chip);
+      });
+    }
+
+    function personRow(u) {
+      var name2 = u.display_name || u.username;
+      var row = el("li", "sc-friend" + (selected[u.id] ? " sel" : ""));
+      row.dataset.id = u.id;
+      var wrap = el("div", "sc-avwrap");
+      var av = el("span", "sc-av"); if (u.avatar_url) av.style.backgroundImage = "url('" + esc(u.avatar_url) + "')"; else av.textContent = (name2 || "?").charAt(0).toUpperCase();
+      wrap.appendChild(av);
+      if (u.online) wrap.appendChild(el("span", "sc-online"));
+      var info = el("span", "sc-fn", "<b>" + esc(name2) + "</b><span>@" + esc(u.username) + "</span>");
+      var circle = el("span", "sc-selcircle", CHECK_SVG);
+      row.appendChild(wrap); row.appendChild(info); row.appendChild(circle);
+      row.addEventListener("click", function () {
+        if (selected[u.id]) { delete selected[u.id]; row.classList.remove("sel"); }
+        else { selected[u.id] = u; row.classList.add("sel"); }
+        refreshChips();
+      });
+      return row;
+    }
+
+    function paintRows() {
+      list.querySelectorAll(".sc-friend").forEach(function (r) { r.classList.toggle("sel", !!selected[r.dataset.id]); });
+    }
+
+    async function render(q) {
+      list.innerHTML = '<div class="sc-empty">Cargando…</div>';
+      try {
+        if (q) {
+          var data = await api("/search?type=users&q=" + encodeURIComponent(q), { headers: authHeaders() });
+          var users = (data.users || []);
+          list.innerHTML = "";
+          if (!users.length) { list.appendChild(el("div", "sc-empty", "Sin resultados.")); return; }
+          users.forEach(function (u) { list.appendChild(personRow(u)); });
+        } else {
+          var friends = await getFriends("");
+          list.innerHTML = "";
+          list.appendChild(el("div", "sc-sechead", "Amigos"));
+          if (!friends.length) list.appendChild(el("div", "sc-empty", "Aún no sigues a nadie. Busca personas arriba."));
+          else friends.forEach(function (f) { list.appendChild(personRow(f)); });
+        }
+      } catch (e) { list.innerHTML = '<div class="sc-empty">' + esc(e.message) + "</div>"; }
+    }
+    var st; search.addEventListener("input", function () { clearTimeout(st); st = setTimeout(function () { render(search.value.trim()); }, 260); });
+    render("");
 
     create.addEventListener("click", async function () {
       if (!name.value.trim()) return;
       create.disabled = true; create.textContent = "Creando…";
       try {
-        await api(isGroup ? "/groups" : "/communities", {
+        await api(endpoint, {
           method: "POST",
           headers: authHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({ name: name.value.trim(), iconUrl: iconUrl, memberIds: Object.keys(selected) }),
         });
-        closeSheet();
-        toast(isGroup ? "Grupo creado." : "Comunidad creada.");
+        closeCreate();
+        toast("Comunidad creada.");
         if (window.Groups && window.Groups.reload) window.Groups.reload();
       } catch (e) {
-        create.disabled = false; create.textContent = isGroup ? "Crear grupo" : "Crear comunidad";
+        create.disabled = false; create.textContent = "Crear comunidad";
         toast(e.message);
       }
     });
   }
+
+  function closeCreate() { overlay.classList.remove("open"); sheet.className = "sc-sheet"; sheet.innerHTML = ""; }
 
   // Expuesto para que groups.js abra el creador desde los enlaces de estado vacío.
   window.Social = { openCreate: openCreate, openMessagePicker: openMessagePicker };

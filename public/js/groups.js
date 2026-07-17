@@ -23,7 +23,7 @@
 
   var CFG = {
     group: {
-      base: "/groups", listKey: "groups", one: "group", labelOne: "grupo",
+      base: "/groups", listKey: "groups", one: "group", labelOne: "comunidad",
       ranks: { member: 1, moderator: 2, admin: 3, owner: 4 }, top: "owner", manageMin: 3,
       labels: { owner: "Propietario", admin: "Administrador", moderator: "Moderador", member: "Miembro" },
       assignable: ["admin", "moderator", "member"], chat: true,
@@ -194,7 +194,7 @@
     head.appendChild(back); head.appendChild(gcAv); head.appendChild(gcTitle);
     gcBody = elx("div", "mm-body");
     var comp = elx("div", "mm-composer");
-    gcInput = elx("input", "mm-input"); gcInput.type = "text"; gcInput.placeholder = "Mensaje al grupo…"; gcInput.maxLength = 4000;
+    gcInput = elx("input", "mm-input"); gcInput.type = "text"; gcInput.placeholder = "Mensaje a la comunidad…"; gcInput.maxLength = 4000;
     var send = elx("button", "mm-send", '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" stroke-linecap="round"><path d="M21.5 12 3 3.5l3.2 8.5L3 20.5z"/><line x1="6.2" y1="12" x2="21.5" y2="12"/></svg>');
     send.type = "button"; send.addEventListener("click", sendGroup);
     gcInput.addEventListener("keydown", function (e) { if (e.key === "Enter") sendGroup(); });

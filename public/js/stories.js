@@ -113,7 +113,9 @@
     };
     fileInput.click();
   }
-  if (addBtn) addBtn.addEventListener("click", addStory);
+  // El badge "+" siempre añade una historia (aunque el botón abra mi visor).
+  var addPlus = addBtn ? addBtn.querySelector(".story-add") : null;
+  if (addPlus) addPlus.addEventListener("click", function (e) { e.stopPropagation(); addStory(); });
 
   // ---------- barra de historias ----------
   var groups = [];
@@ -132,17 +134,39 @@
       var data = await api("/stories", { headers: authHeaders() });
       groups = groupByAuthor(data.stories || []);
     } catch (e) { groups = []; }
+
     // limpia aros previos (deja el botón "Tu historia")
     storiesBar.querySelectorAll(".st-ring-item").forEach(function (n) { n.remove(); });
+
+    var uid = me() && me().id;
+    var myIndex = groups.findIndex(function (g) { return g.author.id === uid; });
+
+    // Configura "Tu historia": si tengo historias, abre mi visor; el + siempre añade.
+    if (addBtn) {
+      var mav = addBtn.querySelector(".story-avatar");
+      var mring = addBtn.querySelector(".story-ring");
+      var u = me();
+      if (mav && u && u.avatar_url) { mav.innerHTML = ""; mav.classList.add("img"); mav.style.backgroundImage = "url('" + esc(u.avatar_url) + "')"; }
+      if (myIndex >= 0) {
+        var mineSeen = groups[myIndex].stories.every(function (s) { return s.viewed; });
+        if (mring) mring.className = "story-ring " + (mineSeen ? "seen" : "has");
+        addBtn.onclick = function () { openViewer(myIndex); };
+      } else {
+        if (mring) mring.className = "story-ring";
+        addBtn.onclick = function () { addStory(); };
+      }
+    }
+
+    // Aros de los DEMÁS autores (nunca el mío -> sin duplicados)
     groups.forEach(function (g, gi) {
+      if (g.author.id === uid) return;
       var allSeen = g.stories.every(function (s) { return s.viewed; });
-      var mine = me() && g.author.id === me().id;
-      var btn = elx("button", "story st-ring-item"); btn.type = "button";
+      var btn = elx("button", "story st-ring-item anim-fade"); btn.type = "button";
       var ring = elx("span", "story-ring " + (allSeen ? "seen" : "has"));
       var av = elx("span", "story-avatar" + (g.author.avatar_url ? " img" : ""));
       if (g.author.avatar_url) av.style.backgroundImage = "url('" + esc(g.author.avatar_url) + "')"; else av.textContent = initial(g.author.display_name || g.author.username);
       ring.appendChild(av); btn.appendChild(ring);
-      btn.appendChild(elx("span", "story-name", esc(mine ? "Tu historia" : (g.author.display_name || g.author.username))));
+      btn.appendChild(elx("span", "story-name", esc(g.author.display_name || g.author.username)));
       btn.addEventListener("click", function () { openViewer(gi); });
       storiesBar.appendChild(btn);
     });
