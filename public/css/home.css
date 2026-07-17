@@ -710,3 +710,34 @@ svg { display: block; }
 .pc-filter{ flex:0 0 auto; padding:7px 12px; border-radius:10px; border:1px solid #e2e5ea; background:#fff;
   font:inherit; font-size:12px; font-weight:700; color:#333; cursor:pointer; }
 .pc-filter.on{ border-color:#3d7bfa; color:#3d7bfa; background:#eef3ff; }
+
+/* ==============================================================
+   Historias tipo Instagram: aros + visor a pantalla completa
+   ============================================================== */
+.story-ring.has{ border-color:transparent; background:linear-gradient(45deg,#f9ce34,#ee2a7b,#6228d7); }
+.story-ring.has .story-avatar{ border:2px solid #fff; box-sizing:border-box; }
+.story-ring.seen{ background:#d3d6dc; }
+.story-avatar.img{ background-size:cover; background-position:center; }
+
+.st-viewer{ position:fixed; inset:0; background:#000; z-index:400; display:none; flex-direction:column; }
+.st-viewer.open{ display:flex; }
+.st-bars{ display:flex; gap:4px; padding:10px 10px 6px; }
+.st-bar{ flex:1; height:3px; border-radius:3px; background:rgba(255,255,255,.3); overflow:hidden; }
+.st-bar > i{ display:block; height:100%; width:0; background:#fff; }
+.st-bar.done > i{ width:100%; }
+.st-top{ display:flex; align-items:center; gap:10px; padding:2px 14px 10px; color:#fff; position:relative; z-index:4; }
+.st-top .st-av{ width:34px; height:34px; border-radius:50%; background:#4a90e2; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; background-size:cover; background-position:center; flex:0 0 auto; }
+.st-top .st-meta{ display:flex; flex-direction:column; line-height:1.15; }
+.st-top .st-meta b{ font-size:14px; } .st-top .st-meta span{ font-size:12px; opacity:.8; }
+.st-close{ margin-left:auto; background:none; border:0; color:#fff; font-size:28px; cursor:pointer; line-height:1; padding:0 4px; }
+.st-stage{ flex:1; position:relative; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+.st-stage img{ max-width:100%; max-height:100%; object-fit:contain; }
+.st-caption{ position:absolute; left:0; right:0; bottom:14px; text-align:center; color:#fff; padding:0 24px; font-size:15px; text-shadow:0 1px 4px rgba(0,0,0,.7); }
+.st-nav{ position:absolute; top:0; bottom:0; width:35%; z-index:3; cursor:pointer; }
+.st-nav.left{ left:0; } .st-nav.right{ right:0; }
+.st-foot{ position:relative; z-index:4; padding:12px 14px calc(14px + env(safe-area-inset-bottom)); display:flex; align-items:center; gap:8px; }
+.st-msg{ flex:1; height:44px; border-radius:22px; border:1px solid rgba(255,255,255,.45); background:transparent; color:#fff; padding:0 16px; font:inherit; font-size:14px; }
+.st-msg::placeholder{ color:rgba(255,255,255,.7); }
+.st-react{ background:none; border:0; font-size:27px; cursor:pointer; line-height:1; }
+.st-react.off{ opacity:.55; }
+.st-views{ color:#fff; display:inline-flex; align-items:center; gap:7px; font-size:14px; font-weight:700; background:rgba(255,255,255,.14); border:0; border-radius:20px; padding:9px 16px; cursor:pointer; margin:0 auto; }

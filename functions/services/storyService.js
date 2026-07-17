@@ -45,18 +45,82 @@ export async function create(env, authorId, input) {
     return rows[0];
 }
 
-export async function listActive(env, { limit = 100 } = {}) {
+export async function listActive(env, { limit = 200, meId = null } = {}) {
     const sql = getSql(env);
+    // Devuelve las historias activas con contadores de vistas/reacciones y, si
+    // hay sesión, si YO ya la vi, mi reacción y si sigo al autor.
+    // Orden ascendente por autor para reproducirlas en secuencia.
     return sql`
         SELECT s.id, s.author_id, s.media_url, s.media_type, s.caption,
                s.created_at, s.expires_at,
                GREATEST(EXTRACT(EPOCH FROM (s.expires_at - NOW()))::int, 0) AS seconds_remaining,
-               u.username, u.display_name, u.avatar_url
+               u.username, u.display_name, u.avatar_url,
+               (SELECT COUNT(*) FROM story_views v WHERE v.story_id = s.id)::int AS views_count,
+               (SELECT COUNT(*) FROM story_views v WHERE v.story_id = s.id AND v.reaction IS NOT NULL)::int AS reactions_count,
+               CASE WHEN ${meId}::uuid IS NULL THEN FALSE
+                    ELSE EXISTS (SELECT 1 FROM story_views v WHERE v.story_id = s.id AND v.viewer_id = ${meId}::uuid)
+               END AS viewed,
+               (SELECT v.reaction FROM story_views v WHERE v.story_id = s.id AND v.viewer_id = ${meId}::uuid) AS my_reaction,
+               CASE WHEN ${meId}::uuid IS NULL THEN FALSE
+                    WHEN s.author_id = ${meId}::uuid THEN TRUE
+                    ELSE EXISTS (SELECT 1 FROM follows f WHERE f.follower_id = ${meId}::uuid AND f.following_id = s.author_id)
+               END AS author_following
         FROM stories s
         JOIN users u ON u.id = s.author_id
         WHERE s.expires_at > NOW()
-        ORDER BY s.created_at DESC
+        ORDER BY (s.author_id = ${meId}::uuid) DESC, s.author_id, s.created_at ASC
         LIMIT ${limit}`;
+}
+
+// Registra una vista (idempotente; conserva la reacción si ya existía).
+export async function registerView(env, storyId, viewerId) {
+    const sql = getSql(env);
+    const st = await sql`SELECT author_id FROM stories WHERE id = ${storyId} AND expires_at > NOW() LIMIT 1`;
+    if (!st.length) throw new NotFoundError("Historia no encontrada o expirada.");
+    if (st[0].author_id === viewerId) return { viewed: true, own: true }; // no cuentes tus propias vistas
+    await sql`
+        INSERT INTO story_views (story_id, viewer_id)
+        VALUES (${storyId}, ${viewerId})
+        ON CONFLICT (story_id, viewer_id) DO NOTHING`;
+    return { viewed: true };
+}
+
+// Reacciona a una historia (like/love). Reaccionar también cuenta como vista.
+export async function setReaction(env, storyId, viewerId, reaction) {
+    if (!["like", "love"].includes(reaction)) throw new BadRequestError("La reacción debe ser 'like' o 'love'.");
+    const sql = getSql(env);
+    const st = await sql`SELECT id FROM stories WHERE id = ${storyId} AND expires_at > NOW() LIMIT 1`;
+    if (!st.length) throw new NotFoundError("Historia no encontrada o expirada.");
+    await sql`
+        INSERT INTO story_views (story_id, viewer_id, reaction)
+        VALUES (${storyId}, ${viewerId}, ${reaction})
+        ON CONFLICT (story_id, viewer_id) DO UPDATE SET reaction = EXCLUDED.reaction`;
+    return { reacted: true, reaction };
+}
+
+export async function removeReaction(env, storyId, viewerId) {
+    const sql = getSql(env);
+    await sql`UPDATE story_views SET reaction = NULL WHERE story_id = ${storyId} AND viewer_id = ${viewerId}`;
+    return { reacted: false };
+}
+
+// Lista de quién vio la historia (solo el dueño). Incluye su reacción.
+export async function getViewers(env, storyId, ownerId) {
+    const sql = getSql(env);
+    const st = await sql`SELECT author_id FROM stories WHERE id = ${storyId} LIMIT 1`;
+    if (!st.length) throw new NotFoundError("Historia no encontrada.");
+    if (st[0].author_id !== ownerId) throw new ForbiddenError("Solo puedes ver quién vio tu propia historia.");
+    const viewers = await sql`
+        SELECT u.id, u.username, u.display_name, u.avatar_url, v.reaction, v.created_at
+        FROM story_views v
+        JOIN users u ON u.id = v.viewer_id
+        WHERE v.story_id = ${storyId}
+        ORDER BY v.created_at DESC`;
+    const counts = await sql`
+        SELECT COUNT(*)::int AS views,
+               COUNT(*) FILTER (WHERE reaction IS NOT NULL)::int AS reactions
+        FROM story_views WHERE story_id = ${storyId}`;
+    return { viewers, views: counts[0].views, reactions: counts[0].reactions };
 }
 
 export async function listByAuthor(env, authorId, { limit = 50 } = {}) {

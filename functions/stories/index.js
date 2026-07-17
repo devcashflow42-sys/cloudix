@@ -6,8 +6,8 @@ import { success, created } from "../utils/response.js";
 import * as storyService from "../services/storyService.js";
 
 export async function onRequestGet(context) {
-    await optionalAuth(context);
-    const stories = await storyService.listActive(context.env, { limit: 100 });
+    const me = await optionalAuth(context);
+    const stories = await storyService.listActive(context.env, { limit: 200, meId: me ? me.id : null });
     // serverTime permite al cliente calcular el tiempo restante sin depender
     // del reloj local (evita desfases en la cuenta regresiva).
     return success(
