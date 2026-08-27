@@ -255,3 +255,39 @@ button:disabled { cursor: default; }
   .mm-conv:hover, .sc-friend:hover, .row:hover { background: var(--surface-2); }
   .tab:hover { color: var(--text); }
 }
+
+/* ==============================================================
+   PASO 3 — Feed y publicaciones (jerarquía, media, acciones, skeleton)
+   ============================================================== */
+.post { padding: var(--sp-4) var(--sp-4) var(--sp-2); }
+.post-head { gap: var(--sp-3); margin-bottom: var(--sp-2); }
+.post-av { width: 44px; height: 44px; }
+.post-id b { font-size: 15px; font-weight: 600; letter-spacing: -.01em; color: var(--text); }
+.post-id span { font-size: 13px; color: var(--text-3); }
+.post-text { font-size: 15px; line-height: 1.55; margin: 2px 0 var(--sp-3); color: var(--text); }
+
+/* Media: bordes redondeados moderados + proporción respetada (letterbox) */
+.post-media { margin: var(--sp-2) 0; border-radius: var(--r); overflow: hidden; background: #000; }
+.post-slide img, .post-slide video { max-height: 74vh; }
+.post-single img, .post-single video { border-radius: var(--r); }
+
+/* Barra de acciones alineada (like/comentar/compartir · guardar) */
+.post-actions { gap: 2px; margin-top: var(--sp-1); }
+.post-btn { gap: 6px; font-size: 13px; font-weight: 600; color: var(--text-2); }
+.post-btn .post-n { font-variant-numeric: tabular-nums; }
+.post-btn:hover { color: var(--text); }
+.post-btn.liked, .post-btn.liked:hover { color: var(--danger); }
+.post-btn.liked svg { fill: var(--danger); stroke: var(--danger); }
+.post-btn.saved svg { fill: currentColor; }
+
+/* Encuesta con tokens */
+.poll-opt { border-color: var(--border-strong); }
+.poll-fill { background: var(--accent-weak); }
+.poll-total { color: var(--text-3); }
+
+/* Skeleton del feed */
+.post-sk { padding: var(--sp-4); border-bottom: 8px solid var(--bg); }
+.post-sk .sk-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.sk-av { width: 44px; height: 44px; border-radius: 50%; }
+.sk-l { height: 11px; border-radius: 6px; }
+.sk-media { width: 100%; height: 230px; border-radius: var(--r); margin-top: 12px; }

@@ -369,19 +369,32 @@
     draw();
   }
 
-  // ---------- carga del feed ----------
+  // ---------- carga del feed (con skeletons) ----------
+  function skeletonCard() {
+    var li = elx("li", "post-sk");
+    li.innerHTML =
+      '<div class="sk-row"><span class="skeleton sk-av"></span>' +
+      '<div style="flex:1"><div class="skeleton sk-l" style="width:42%"></div>' +
+      '<div class="skeleton sk-l" style="width:26%;margin-top:7px"></div></div></div>' +
+      '<div class="skeleton sk-l" style="width:94%"></div>' +
+      '<div class="skeleton sk-l" style="width:72%;margin-top:7px"></div>' +
+      '<div class="skeleton sk-media"></div>';
+    return li;
+  }
   async function loadFeed() {
     if (!feed) return;
+    if (homeEmpty) homeEmpty.style.display = "none";
+    feed.innerHTML = "";
+    for (var i = 0; i < 3; i++) feed.appendChild(skeletonCard()); // estado de carga
     try {
       var data = await api("/posts", { headers: authHeaders() });
       var posts = Array.isArray(data) ? data : [];
       feed.innerHTML = "";
       if (!posts.length) { if (homeEmpty) homeEmpty.style.display = ""; return; }
-      if (homeEmpty) homeEmpty.style.display = "none";
       var frag = document.createDocumentFragment();
       posts.forEach(function (p) { frag.appendChild(card(p)); });
       feed.appendChild(frag);
-    } catch (e) { /* deja el estado vacío */ }
+    } catch (e) { feed.innerHTML = ""; if (homeEmpty) homeEmpty.style.display = ""; }
   }
 
   // ---------- iconos ----------
