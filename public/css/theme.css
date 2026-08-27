@@ -186,3 +186,72 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 :root[data-theme="light"] .sc-sheet .sc-tbtn { background: rgba(0,0,0,.05); color: #111; }
 :root[data-theme="light"] .sc-sheet .sc-createbar { background: linear-gradient(to top, rgba(255,255,255,.95), rgba(255,255,255,.6)); }
 :root[data-theme="light"] .sc-grip { background: #c9ced8; }
+
+/* ==============================================================
+   PASO 2 — Profundidad en claro + botones e inputs reutilizables
+   ============================================================== */
+
+/* 6. Profundidad en modo claro: fondo con un gris muy sutil para que las
+   superficies (barras, tarjetas, posts) resalten como en Threads/IG. */
+:root { --bg: #f6f7f9; --surface: #ffffff; }
+.topbar { box-shadow: 0 1px 0 rgba(16,24,40,.03); }
+:root[data-theme="dark"] .topbar { box-shadow: none; }
+/* El separador entre posts se funde con el fondo (gutter limpio). */
+.post { border-bottom-color: var(--bg); }
+
+/* 7. SISTEMA DE BOTONES (restila clases existentes; sin tocar HTML) --------
+   Todos comparten altura/padding/radio propios + transición y estados. */
+.sc-primary, .gc-abtn, .sc-follow, .mm-send, .empty-link, .sc-link, .post-btn, .pc-tool, .pc-filter, .sc-tbtn, .tp-theme {
+  transition: background .18s ease, color .18s ease, border-color .18s ease, transform .12s ease, box-shadow .18s ease;
+}
+button:disabled { cursor: default; }
+
+/* Primary (acento) */
+.sc-primary, .mm-send { background: var(--accent); color: #fff; }
+.sc-primary:hover, .mm-send:hover { background: var(--accent-hover); }
+.sc-primary:active, .mm-send:active { transform: scale(.97); }
+.sc-primary:disabled { opacity: .5; }
+.sc-primary:focus-visible, .mm-send:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Follow / seguir (primary chip) + estado "siguiendo" (secondary) */
+.sc-follow { background: var(--accent); color: #fff; }
+.sc-follow:hover { background: var(--accent-hover); }
+.sc-follow.following { background: var(--surface-2); color: var(--text); border: 1px solid var(--border-strong); }
+.sc-follow.following:hover { background: var(--surface-3); }
+
+/* Secondary / ghost / danger (acciones de detalle: .gc-abtn) */
+.gc-abtn { background: var(--surface); border: 1px solid var(--border-strong); color: var(--text); }
+.gc-abtn:hover { background: var(--surface-2); }
+.gc-abtn:active { transform: scale(.98); }
+.gc-abtn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.gc-abtn.primary:hover { background: var(--accent-hover); }
+.gc-abtn.danger { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 45%, var(--border)); }
+.gc-abtn.danger:hover { background: color-mix(in srgb, var(--danger) 10%, transparent); }
+
+/* Enlaces de acción */
+.empty-link, .sc-link { color: var(--accent); }
+.empty-link:hover, .sc-link:hover { color: var(--accent-hover); text-decoration: underline; }
+
+/* Icon buttons */
+.post-menu, .post-btn, .mm-back, .sc-tbtn, .tp-theme { border-radius: 50%; }
+.post-menu:hover, .mm-back:hover { background: var(--surface-2); }
+
+/* 8. SISTEMA DE INPUTS (foco claro, tokens, placeholder elegante) --------- */
+.sc-input, .sc-area, .sc-search-input, .mm-input, .th-input {
+  background: var(--surface); border: 1px solid var(--border-strong); color: var(--text);
+  transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
+}
+.sc-input::placeholder, .sc-area::placeholder, .sc-search-input::placeholder, .mm-input::placeholder, .th-input::placeholder { color: var(--text-3); }
+.sc-input:focus, .sc-area:focus, .sc-search-input:focus, .mm-input:focus, .th-input:focus {
+  outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-weak);
+}
+.sc-input:disabled, .sc-area:disabled { opacity: .6; }
+.sc-search-input { background: var(--surface-2); }
+.sc-search-input:focus { background: var(--surface); }
+
+/* 9. Microinteracciones de navegación/listas (hover suave en escritorio) */
+@media (hover: hover) {
+  .bn-item:hover, .dw-item:hover { color: var(--text); }
+  .mm-conv:hover, .sc-friend:hover, .row:hover { background: var(--surface-2); }
+  .tab:hover { color: var(--text); }
+}
