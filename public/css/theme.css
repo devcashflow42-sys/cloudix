@@ -466,3 +466,16 @@ button:disabled { cursor: default; }
 .rail-more:hover { background: var(--surface-2); }
 .rail-foot { padding: 16px 12px 0; color: var(--text-3); font-size: 12px; display: flex; gap: 6px; flex-wrap: wrap; }
 .rail-dot { opacity: .55; }
+
+/* ==============================================================
+   PASO 9 — Buscar + Explorar
+   Cuadrícula de descubrimiento (reutiliza .pf-grid/.pf-cell) y
+   esqueletos de carga para los resultados de personas.
+   ============================================================== */
+.ex-head { padding: 8px 2px 10px; }
+.ex-title { font-size: 15px; font-weight: 800; letter-spacing: -.01em; color: var(--text); }
+.ex-grid { padding: 0; }                 /* usa el ancho del contenedor de búsqueda */
+@media (min-width: 768px) { .ex-grid { padding: 0; max-width: none; margin: 0; } }
+.ex-empty { grid-column: 1 / -1; padding: 30px 12px; text-align: center; color: var(--text-3); font-size: 13px; }
+.sc-sk { cursor: default; }
+.sc-sk .sk-av { flex: 0 0 40px; width: 40px; height: 40px; }

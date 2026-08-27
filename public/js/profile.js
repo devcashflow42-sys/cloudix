@@ -234,6 +234,7 @@
   });
 
   window.Profile = { reload: loadGrids };
+  window.Lightbox = { open: openLightbox, close: closeLightbox };   // reutilizable por Explorar
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", load);
