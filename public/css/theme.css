@@ -479,3 +479,63 @@ button:disabled { cursor: default; }
 .ex-empty { grid-column: 1 / -1; padding: 30px 12px; text-align: center; color: var(--text-3); font-size: 13px; }
 .sc-sk { cursor: default; }
 .sc-sk .sk-av { flex: 0 0 40px; width: 40px; height: 40px; }
+
+/* ==============================================================
+   PASO 10 — Responsive fino · accesibilidad · animaciones · rendimiento
+   ============================================================== */
+
+/* Comportamiento tipo app nativa */
+html { scroll-behavior: smooth; }
+body { overscroll-behavior-y: none; }
+a, button, .bn-item, .dw-item, .row, .story, .pf-cell, .tab, .menu-item, .sc-friend, .rail-user {
+  -webkit-tap-highlight-color: transparent;
+}
+.bn-item, .dw-item, .tab, .story { cursor: pointer; }
+
+/* Microinteracción premium en las cuadrículas (perfil/explorar) */
+@media (hover: hover) {
+  .pf-cell img, .pf-cell video { transition: transform .3s ease; }
+  .pf-cell:hover img, .pf-cell:hover video { transform: scale(1.045); }
+}
+.pf-cell img, .pf-cell video { -webkit-user-drag: none; user-select: none; }
+
+/* Foco accesible en la navegación por div (rol=button vía JS) */
+.bn-item:focus-visible, .dw-item:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 12px; }
+
+/* ---------- Móviles muy pequeños (≤360px) ---------- */
+@media (max-width: 360px) {
+  .topbar { padding: 10px 14px; }
+  .logo { font-size: 19px; }
+  .top-icons { gap: 14px; }
+  .layout { padding: 0 12px; }
+  .story-name { font-size: 11px; }
+  .pf-name { font-size: 20px; }
+  .pf-stats { gap: 4px; }
+  .post-actions { gap: 2px; }
+  .sc-search-wrap { padding: 12px 12px 90px; }
+}
+
+/* ---------- Pantallas medianas (tablet, 640–1024px) ---------- */
+@media (min-width: 640px) and (max-width: 1024px) {
+  .feed { max-width: 600px; margin: 0 auto; }
+  .sc-search-wrap { max-width: 600px; }
+}
+
+/* ---------- Pantallas muy anchas (≥1600px) ---------- */
+/* Ensancha ligeramente la columna central y el panel derecho para
+   aprovechar el espacio sin estirar el contenido en exceso. */
+@media (min-width: 1600px) {
+  .page.active { max-width: 772px; }
+  body:not([data-active="chat"]) .rail { flex-basis: 360px; }
+}
+
+/* Reducir movimiento: neutraliza animaciones y transiciones globalmente
+   (respeta la preferencia del sistema del usuario). */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

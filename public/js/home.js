@@ -147,3 +147,17 @@ document.querySelectorAll('.post-like').forEach(function (btn) {
 
 var firstRow = document.querySelector('.tab-panel[data-panel="chat"] .row');
 if (firstRow) { selectRow(firstRow); }
+
+/* ---- Accesibilidad: navegación por div operable con teclado ---- */
+(function () {
+  var LABELS = { home: 'Inicio', search: 'Buscar', create: 'Crear publicación', chat: 'Mensajes', profile: 'Perfil' };
+  document.querySelectorAll('.bn-item[data-tab], .dw-item[data-tab]').forEach(function (el) {
+    if (!el.getAttribute('role')) { el.setAttribute('role', 'button'); }
+    if (!el.hasAttribute('tabindex')) { el.setAttribute('tabindex', '0'); }
+    var t = el.dataset.tab;
+    if (LABELS[t] && !el.getAttribute('aria-label')) { el.setAttribute('aria-label', LABELS[t]); }
+    el.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') { e.preventDefault(); el.click(); }
+    });
+  });
+})();
