@@ -273,20 +273,33 @@
     catch (e) { toast(e.message); }
   }
 
-  // ---------- opciones (⋮) ----------
+  // ---------- opciones (⋮) — menú con iconos ----------
+  var MI = {
+    edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
+    trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
+    share: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>',
+    link: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1.5 1.5"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1.5-1.5"/></svg>',
+    flag: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>',
+    send: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>',
+    user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+  };
+  function menuItem(icon, label, fn, danger) {
+    var b = elx("button", "menu-item" + (danger ? " danger" : ""), icon + "<span>" + label + "</span>");
+    b.type = "button"; b.addEventListener("click", fn); return b;
+  }
   function openOptions(p, li) {
     sheet.innerHTML = ""; sheet.appendChild(elx("div", "sc-grip"));
     var mine = myId() && p.author_id === myId();
     if (mine) {
-      sheet.appendChild(optBtn("Editar", function () { editPost(p, li); }));
-      sheet.appendChild(optBtn("Eliminar", function () { deletePost(p, li); }, true));
+      sheet.appendChild(menuItem(MI.edit, "Editar", function () { editPost(p, li); }));
+      sheet.appendChild(menuItem(MI.trash, "Eliminar", function () { deletePost(p, li); }, true));
+      sheet.appendChild(elx("div", "menu-sep"));
     }
-    sheet.appendChild(optBtn("Compartir", function () { openShare(p); }));
-    sheet.appendChild(optBtn("Copiar enlace", function () { copyLink(p); }));
-    if (!mine) sheet.appendChild(optBtn("Reportar", function () { reportPost(p); }, true));
+    sheet.appendChild(menuItem(MI.share, "Compartir", function () { openShare(p); }));
+    sheet.appendChild(menuItem(MI.link, "Copiar enlace", function () { copyLink(p); }));
+    if (!mine) { sheet.appendChild(elx("div", "menu-sep")); sheet.appendChild(menuItem(MI.flag, "Reportar", function () { reportPost(p); }, true)); }
     openSheet();
   }
-  function optBtn(label, fn, danger) { var b = elx("button", "gc-abtn" + (danger ? " danger" : ""), label); b.type = "button"; b.style.width = "100%"; b.style.marginBottom = "8px"; b.addEventListener("click", fn); return b; }
 
   function editPost(p, li) {
     sheet.innerHTML = ""; sheet.appendChild(elx("div", "sc-grip")); sheet.appendChild(elx("h3", "sc-title", "Editar publicación"));
@@ -316,10 +329,10 @@
 
   // ---------- compartir ----------
   function openShare(p) {
-    sheet.innerHTML = ""; sheet.appendChild(elx("div", "sc-grip")); sheet.appendChild(elx("h3", "sc-title", "Compartir"));
-    if (navigator.share) sheet.appendChild(optBtn("Compartir con…", function () { navigator.share({ title: "Cloudix", text: (p.content || "Mira esta publicación"), url: window.location.origin + "/#post-" + p.id }).catch(function () {}); }));
-    sheet.appendChild(optBtn("Enviar a un amigo", function () { shareToFriend(p); }));
-    sheet.appendChild(optBtn("Copiar enlace", function () { copyLink(p); }));
+    sheet.innerHTML = ""; sheet.appendChild(elx("div", "sc-grip")); sheet.appendChild(elx("div", "menu-head", "Compartir"));
+    if (navigator.share) sheet.appendChild(menuItem(MI.share, "Compartir con…", function () { navigator.share({ title: "Cloudix", text: (p.content || "Mira esta publicación"), url: window.location.origin + "/#post-" + p.id }).catch(function () {}); }));
+    sheet.appendChild(menuItem(MI.user, "Enviar a un amigo", function () { shareToFriend(p); }));
+    sheet.appendChild(menuItem(MI.link, "Copiar enlace", function () { copyLink(p); }));
     openSheet();
   }
   async function shareToFriend(p) {

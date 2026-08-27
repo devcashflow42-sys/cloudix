@@ -319,3 +319,29 @@ button:disabled { cursor: default; }
 @keyframes st-in { from { opacity: 0; } to { opacity: 1; } }
 .st-stage img { animation: st-media .3s cubic-bezier(.22,1,.36,1); }
 @keyframes st-media { from { opacity: 0; transform: scale(1.03); } to { opacity: 1; transform: none; } }
+
+/* ==============================================================
+   PASO 5 — Modales y menús contextuales
+   ============================================================== */
+/* Modal centrado en tablet/escritorio; bottom sheet en móvil. */
+@media (min-width: 640px) {
+  .sc-overlay { align-items: center; }
+  .sc-sheet { margin: 0 auto; border-radius: var(--r-lg); box-shadow: var(--shadow-2); }
+  .sc-sheet.sc-full { height: 88vh; border-radius: var(--r-lg); }
+}
+/* Borde sutil de la hoja para separarla del fondo desenfocado. */
+.sc-sheet { border: 1px solid var(--border); }
+:root[data-theme="dark"] .sc-sheet { border-color: rgba(255,255,255,.06); }
+
+/* Componente: fila de menú contextual con icono. */
+.menu-item { display: flex; align-items: center; gap: 14px; width: 100%;
+  padding: 13px 12px; border: 0; background: none; font: inherit; font-size: 15px; font-weight: 600;
+  color: var(--text); cursor: pointer; border-radius: 12px; text-align: left;
+  transition: background .15s ease, color .15s ease; }
+.menu-item:hover { background: var(--surface-2); }
+.menu-item:active { background: var(--surface-3); }
+.menu-item svg { width: 22px; height: 22px; color: var(--text-2); flex: 0 0 auto; }
+.menu-item.danger { color: var(--danger); }
+.menu-item.danger svg { color: var(--danger); }
+.menu-sep { height: 1px; background: var(--border); margin: 6px 4px; border: 0; }
+.menu-head { font-size: 13px; font-weight: 700; color: var(--text-3); text-transform: uppercase; letter-spacing: .4px; padding: 4px 12px 8px; }
