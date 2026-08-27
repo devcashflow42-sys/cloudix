@@ -291,3 +291,31 @@ button:disabled { cursor: default; }
 .sk-av { width: 44px; height: 44px; border-radius: 50%; }
 .sk-l { height: 11px; border-radius: 6px; }
 .sk-media { width: 100%; height: 230px; border-radius: var(--r); margin-top: 12px; }
+
+/* ==============================================================
+   PASO 4 — Historias (aros con identidad propia, animación, skeleton)
+   ============================================================== */
+.story { transition: transform .15s ease; }
+.story:active { transform: scale(.94); }
+.story-ring { transition: background .3s ease, border-color .3s ease; }
+
+/* Aro con historias nuevas: degradado de MARCA (cónico azul→violeta→cian),
+   variante propia distinta a Instagram. */
+.story-ring.has { border-color: transparent;
+  background: conic-gradient(from 210deg, var(--accent), #7c5cff, #22d3ee, var(--accent)); }
+.story-ring.has .story-avatar { border: 2px solid var(--surface); box-sizing: border-box; }
+
+/* Vistas: aro gris discreto por token. */
+.story-ring.seen { background: var(--border-strong); border-color: transparent; }
+.story-name { color: var(--text-2); font-size: 12px; }
+
+/* Skeleton de la barra de historias */
+.story-sk { flex: 0 0 auto; width: 66px; display: flex; flex-direction: column; align-items: center; gap: 7px; }
+.story-sk .sk-c { width: 56px; height: 56px; border-radius: 50%; }
+.story-sk .sk-t { width: 44px; height: 9px; border-radius: 5px; }
+
+/* Apertura suave del visor + entrada de la media */
+.st-viewer.open { animation: st-in .22s ease; }
+@keyframes st-in { from { opacity: 0; } to { opacity: 1; } }
+.st-stage img { animation: st-media .3s cubic-bezier(.22,1,.36,1); }
+@keyframes st-media { from { opacity: 0; transform: scale(1.03); } to { opacity: 1; transform: none; } }

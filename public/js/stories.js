@@ -128,15 +128,26 @@
     return out;
   }
 
+  function skeletonStory() {
+    var d = elx("div", "story-sk");
+    d.innerHTML = '<span class="skeleton sk-c"></span><span class="skeleton sk-t"></span>';
+    return d;
+  }
+
   async function loadBar() {
     if (!storiesBar) return;
+
+    // Skeletons mientras carga.
+    storiesBar.querySelectorAll(".st-ring-item, .story-sk").forEach(function (n) { n.remove(); });
+    for (var s = 0; s < 4; s++) storiesBar.appendChild(skeletonStory());
+
     try {
       var data = await api("/stories", { headers: authHeaders() });
       groups = groupByAuthor(data.stories || []);
     } catch (e) { groups = []; }
 
-    // limpia aros previos (deja el botón "Tu historia")
-    storiesBar.querySelectorAll(".st-ring-item").forEach(function (n) { n.remove(); });
+    // limpia skeletons y aros previos (deja el botón "Tu historia")
+    storiesBar.querySelectorAll(".st-ring-item, .story-sk").forEach(function (n) { n.remove(); });
 
     var uid = me() && me().id;
     var myIndex = groups.findIndex(function (g) { return g.author.id === uid; });
