@@ -345,3 +345,34 @@ button:disabled { cursor: default; }
 .menu-item.danger svg { color: var(--danger); }
 .menu-sep { height: 1px; background: var(--border); margin: 6px 4px; border: 0; }
 .menu-head { font-size: 13px; font-weight: 700; color: var(--text-3); text-transform: uppercase; letter-spacing: .4px; padding: 4px 12px 8px; }
+
+/* ==============================================================
+   PASO 6 — Mensajería (bandeja + hilo + skeletons)
+   ============================================================== */
+/* Bandeja de conversaciones */
+.mm-conv { padding: 12px 16px; gap: 12px; align-items: center; transition: background .15s ease; }
+.mm-cmeta { min-width: 0; }
+.mm-cmeta b { font-size: 14.5px; font-weight: 600; color: var(--text); }
+.mm-cmeta span { color: var(--text-3); }
+.mm-conv.unread .mm-cmeta span { color: var(--text); font-weight: 600; }
+.mm-cright { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex: 0 0 auto; }
+.mm-time { font-size: 12px; color: var(--text-3); }
+.mm-conv.unread .mm-time { color: var(--accent); font-weight: 700; }
+.mm-badge { background: var(--accent); box-shadow: 0 1px 3px color-mix(in srgb, var(--accent) 40%, transparent); }
+
+/* Hilo de chat */
+.mm-head { border-bottom-color: var(--border); }
+.mm-head b { color: var(--text); }
+.mm-body { background: var(--surface); }
+.mm-msg { box-shadow: var(--shadow-1); max-width: 76%; }
+.mm-msg.theirs { background: var(--surface-2); color: var(--text); }
+.mm-msg.mine { background: var(--accent); color: #fff; }
+.mm-composer { background: var(--surface); border-top-color: var(--border); }
+.mm-input { background: var(--surface-2); border-color: var(--border); color: var(--text); }
+.mm-input:focus { background: var(--surface); }
+
+/* Skeleton de la bandeja */
+.mm-sk { display: flex; align-items: center; gap: 12px; padding: 12px 16px; }
+.mm-sk .sk-av { width: 48px; height: 48px; }
+.mm-sk .sk-c { flex: 1; }
+.mm-sk .sk-l { height: 12px; border-radius: 6px; }

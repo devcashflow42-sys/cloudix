@@ -27,21 +27,44 @@
   var chatEmpty = chatPanel ? chatPanel.querySelector(".empty") : null;
 
   // ---------- bandeja ----------
+  function timeShort(iso) {
+    if (!iso) return "";
+    var d = new Date(iso), now = new Date();
+    var sameDay = d.toDateString() === now.toDateString();
+    if (sameDay) return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    var days = Math.floor((now - d) / 86400000);
+    if (days < 7) return d.toLocaleDateString([], { weekday: "short" });
+    return d.toLocaleDateString([], { day: "2-digit", month: "2-digit" });
+  }
+  function skeletonConv() {
+    var li = elx("li", "mm-sk");
+    li.innerHTML = '<span class="skeleton sk-av"></span><div class="sk-c"><div class="skeleton sk-l" style="width:45%"></div><div class="skeleton sk-l" style="width:70%;margin-top:8px"></div></div>';
+    return li;
+  }
+
   async function loadConversations() {
     if (!chatPanel || !token()) return;
+    var list = chatPanel.querySelector(".mm-convos");
+
+    // Skeletons de carga (solo en la primera carga, para no parpadear al refrescar).
+    var firstLoad = !list;
+    if (firstLoad) {
+      if (chatEmpty) chatEmpty.style.display = "none";
+      list = elx("ul", "mm-convos"); chatPanel.appendChild(list);
+      for (var s = 0; s < 5; s++) list.appendChild(skeletonConv());
+    }
+
     var data;
     try { data = await api("/messages", { headers: authHeaders() }); }
-    catch (e) { return; }
+    catch (e) { if (firstLoad) list.remove(); return; }
     var convos = (data && data.conversations) || [];
 
-    var list = chatPanel.querySelector(".mm-convos");
     if (!convos.length) {
       if (list) list.remove();
       if (chatEmpty) chatEmpty.style.display = "";
       return;
     }
     if (chatEmpty) chatEmpty.style.display = "none";
-    if (!list) { list = elx("ul", "mm-convos"); chatPanel.appendChild(list); }
     list.innerHTML = "";
     convos.forEach(function (c) {
       var name = c.display_name || c.username;
@@ -49,8 +72,10 @@
       var av = elx("span", "mm-av"); if (c.avatar_url) av.style.backgroundImage = "url('" + esc(c.avatar_url) + "')"; else av.textContent = initial(name);
       var preview = (c.last_mine ? "Tú: " : "") + (c.last_message || "");
       var meta = elx("div", "mm-cmeta", "<b>" + esc(name) + "</b><span>" + esc(preview) + "</span>");
-      li.appendChild(av); li.appendChild(meta);
-      if (c.unread > 0) li.appendChild(elx("span", "mm-badge", String(c.unread)));
+      var right = elx("div", "mm-cright");
+      right.appendChild(elx("span", "mm-time", timeShort(c.last_at)));
+      if (c.unread > 0) right.appendChild(elx("span", "mm-badge", String(c.unread)));
+      li.appendChild(av); li.appendChild(meta); li.appendChild(right);
       li.addEventListener("click", function () { openThread({ id: c.id, name: name, avatar_url: c.avatar_url }); });
       list.appendChild(li);
     });
