@@ -3,25 +3,57 @@
    Colores y diseño originales conservados.
    =================================================================== */
 
+  /* Tokens alineados con el sistema de diseño (theme.css).
+     Se conservan los NOMBRES para que todas las reglas existentes
+     adopten el nuevo lenguaje visual automáticamente. */
   :root{
-    --bg:#f3f4f6;
-    --card:#f9f9f9;
-    --ink:#0a0a0a;
+    --bg:#f6f7f9;
+    --card:#ffffff;
+    --surface-2:#f2f4f8;
+    --ink:#2b2f3a;
     --ink-soft:#6b7280;
-    --field:#f3f4f6;
+    --field:#f1f4f8;
     --field-focus:#ffffff;
-    --border:#e5e7eb;
-    --border-focus:#0a0a0a;
-    --accent:#0a0a0a;
-    --danger:#ef4444;
+    --border:#e6e9ef;
+    --border-strong:#dfe3ea;
+    --border-focus:#3d7bfa;
+    --accent:#3d7bfa;
+    --accent-hover:#2f6bf0;
+    --accent-weak:#eaf1ff;
+    --danger:#ed4956;
+    --success:#16a34a;
     --radius:16px;
+    --ring:rgba(61,123,250,.16);
+    --shadow-btn:0 10px 26px rgba(61,123,250,.30);
+    --shadow-card:0 24px 60px rgba(20,30,60,.10);
+  }
+
+  /* Modo oscuro (theme.js fija data-theme en <html>). */
+  :root[data-theme="dark"]{
+    --bg:#0b0d10;
+    --card:#15181d;
+    --surface-2:#1c2027;
+    --ink:#f1f3f7;
+    --ink-soft:#aab1bd;
+    --field:#1c2027;
+    --field-focus:#20242c;
+    --border:#262b33;
+    --border-strong:#2f3540;
+    --border-focus:#4c8dff;
+    --accent:#4c8dff;
+    --accent-hover:#3d7bfa;
+    --accent-weak:#17233a;
+    --danger:#f2626f;
+    --ring:rgba(76,141,255,.24);
+    --shadow-btn:0 10px 26px rgba(0,0,0,.55);
+    --shadow-card:0 24px 60px rgba(0,0,0,.55);
   }
 
   *{box-sizing:border-box;margin:0;padding:0}
 
   body{
     font-family:'Geist',sans-serif;
-    background:#f9f9f9;
+    background:var(--bg);
     min-height:100vh;
     color:var(--ink);
     -webkit-font-smoothing:antialiased;
@@ -35,7 +67,7 @@
     top:0;
     z-index:50;
     width:100%;
-    background:#f9f9f9;
+    background:var(--bg);
     display:flex;
     align-items:center;
     gap:6px;
@@ -807,3 +839,107 @@
 /* Garantiza que el atributo `hidden` oculte elementos aunque otra clase
    defina `display` (login social / invitado, pendientes de implementar). */
 [hidden]{display:none !important;}
+
+/* ===================================================================
+   CAPA PREMIUM — pulido profesional + modo oscuro
+   Se aplica sobre lo anterior (mismo lenguaje que theme.css).
+   =================================================================== */
+
+/* ---- Logo de marca con profundidad de acento ---- */
+.logo{ box-shadow:0 10px 24px var(--ring); }
+
+/* ---- Inputs: anillo de foco en color de acento ---- */
+input:focus{ border-color:var(--accent); box-shadow:0 0 0 4px var(--ring); }
+.select-trigger:focus-visible{ border-color:var(--accent); box-shadow:0 0 0 4px var(--ring); }
+.select-trigger:hover{ background:var(--surface-2); }
+.sheet-search input:focus{ border-color:var(--accent); box-shadow:0 0 0 4px var(--ring); background:var(--field-focus); }
+input::placeholder,.select-value.placeholder{ color:var(--ink-soft); opacity:.85; }
+
+/* ---- Botón principal: degradado + elevación premium ---- */
+.btn{
+  background:linear-gradient(180deg,var(--accent),var(--accent-hover));
+  box-shadow:0 8px 20px var(--ring);
+}
+.btn:hover{ box-shadow:var(--shadow-btn); transform:translateY(-1px); }
+.btn:active{ transform:translateY(0) scale(.99); }
+.btn:disabled{ background:var(--ink-soft); box-shadow:none; transform:none; opacity:.55; }
+
+/* ---- Enlaces de acción en color de acento ---- */
+.switch a{ color:var(--accent); }
+.switch a:hover{ border-color:var(--accent); }
+.terms label a{ color:var(--accent); }
+
+/* ---- Estados semánticos con tokens ---- */
+.reqs li.ok, .reqs li.ok .dot{ }
+.match-msg.ok{ color:var(--success); }
+.match-msg.bad{ color:var(--danger); }
+input.error{ box-shadow:0 0 0 4px rgba(237,73,86,.14)!important; }
+
+/* ---- Panel de marca: fondo con malla sutil de acento (desktop) ---- */
+@media (min-width:900px){
+  .brand-panel{
+    background:
+      radial-gradient(120% 90% at 100% 0%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 58%),
+      radial-gradient(90% 70% at 0% 100%, color-mix(in srgb, var(--accent) 7%, transparent), transparent 60%),
+      linear-gradient(157deg,#f7f9fc 0%,#eef2f7 55%,#e9eef5 100%);
+    border-right:1px solid var(--border);
+  }
+  .brand-logo{ box-shadow:0 10px 24px var(--ring); }
+  .page > .card{ box-shadow:-1px 0 0 var(--border); }
+}
+
+/* ===================================================================
+   MODO OSCURO — superficies que estaban fijas en claro
+   =================================================================== */
+:root[data-theme="dark"] .toolbar button:hover{ background:rgba(255,255,255,.06); }
+:root[data-theme="dark"] .toolbar button:active{ background:rgba(255,255,255,.10); }
+:root[data-theme="dark"] .toggle-eye:hover{ background:rgba(255,255,255,.07); color:var(--ink); }
+
+:root[data-theme="dark"] .btn-alt,
+:root[data-theme="dark"] .btn-ghost{ background:var(--card); border-color:var(--border); color:var(--ink); }
+:root[data-theme="dark"] .btn-alt:hover,
+:root[data-theme="dark"] .btn-ghost:hover{ background:var(--surface-2); border-color:var(--border-strong); }
+:root[data-theme="dark"] .btn-alt:disabled,
+:root[data-theme="dark"] .btn-ghost:disabled{ background:var(--surface-2); color:var(--ink-soft); }
+
+:root[data-theme="dark"] .divider::before,
+:root[data-theme="dark"] .divider::after{ background:var(--border); }
+
+:root[data-theme="dark"] .reqs .dot{ background:var(--surface-2); }
+:root[data-theme="dark"] .terms input{ background:var(--field); border-color:var(--border-strong); }
+:root[data-theme="dark"] input.error{ background:color-mix(in srgb, var(--danger) 14%, var(--field))!important; }
+:root[data-theme="dark"] .select-trigger.error{ background:color-mix(in srgb, var(--danger) 14%, var(--field)); }
+
+/* Selector de país / hoja inferior */
+:root[data-theme="dark"] .sheet{ background:var(--card); box-shadow:0 -10px 40px rgba(0,0,0,.6); }
+:root[data-theme="dark"] .sheet-handle{ background:var(--border-strong); }
+:root[data-theme="dark"] .sheet-close:hover{ background:var(--surface-2); }
+:root[data-theme="dark"] .sheet-list li:hover{ background:var(--surface-2); }
+:root[data-theme="dark"] .sheet-overlay{ background:rgba(0,0,0,.6); }
+
+/* Progreso de creación (variante clara usada también en móvil) */
+:root[data-theme="dark"] .creation-light .creation-fill{ background:var(--accent); }
+:root[data-theme="dark"] .creation-light .cs-dot{ border-color:var(--border-strong); }
+:root[data-theme="dark"] .creation-light .cs-spin{ border-color:rgba(255,255,255,.18); border-top-color:var(--accent); }
+
+/* Panel de marca en oscuro */
+:root[data-theme="dark"] .brand-panel{
+  background:
+    radial-gradient(120% 90% at 100% 0%, rgba(76,141,255,.16), transparent 58%),
+    linear-gradient(157deg,#0f1319 0%,#12161c 55%,#0c0f14 100%);
+  border-right-color:var(--border);
+  color:var(--ink);
+}
+:root[data-theme="dark"] .brand-cloud{ color:#1b222c; opacity:.5; }
+:root[data-theme="dark"] .brand-wordmark,
+:root[data-theme="dark"] .brand-mid h2{ color:var(--ink); }
+:root[data-theme="dark"] .brand-kicker,
+:root[data-theme="dark"] .brand-mid p,
+:root[data-theme="dark"] .brand-step-tx span,
+:root[data-theme="dark"] .brand-footer .brand-copy{ color:var(--ink-soft); }
+:root[data-theme="dark"] .brand-step-ico{ background:var(--surface-2); border-color:var(--border); color:var(--ink); }
+:root[data-theme="dark"] .brand-step-tx b,
+:root[data-theme="dark"] .brand-footer a{ color:var(--ink); }
+:root[data-theme="dark"] .brand-footer a:hover{ background:rgba(255,255,255,.06); }
+:root[data-theme="dark"] .page > .card{ background:var(--card); box-shadow:-1px 0 0 var(--border); }
+:root[data-theme="dark"] .brand-panel .creation-light .creation-bar{ background:var(--surface-2); }
