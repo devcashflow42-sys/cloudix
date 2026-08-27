@@ -411,3 +411,58 @@ button:disabled { cursor: default; }
 .pf-lightbox { position: fixed; inset: 0; background: rgba(0,0,0,.92); z-index: 420; display: none; align-items: center; justify-content: center; }
 .pf-lightbox.open { display: flex; animation: st-in .2s ease; }
 .pf-lightbox img { max-width: 96%; max-height: 92%; border-radius: 10px; }
+
+/* ==============================================================
+   PASO 8 — Layout de escritorio de 3 zonas
+   Zona 1: barra lateral izquierda premium (.drawer/.dw-item)
+   Zona 2: contenido (sin cambios estructurales)
+   Zona 3: panel derecho "A quién seguir" (.rail), aditivo
+   ============================================================== */
+
+/* ---- Zona 1: barra lateral izquierda ---- */
+.drawer { background: var(--surface); border-right: 1px solid var(--border); }
+.dw-inner { gap: 4px; }
+.dw-item { padding: 12px 14px; gap: 18px; border-radius: 12px; color: var(--text-2);
+  transition: background .15s ease, color .15s ease; }
+.dw-item span { color: var(--text); font-size: 15px; }
+.dw-item:hover { background: var(--surface-2); }
+.dw-item.active { background: var(--accent-weak); color: var(--accent); }
+.dw-item.active span { color: var(--accent); font-weight: 700; }
+.dw-item:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--accent); }
+.dw-item .nav-avatar { background: var(--surface-3); color: var(--text-3); }
+.dw-item.active .nav-avatar { border-color: var(--accent); color: var(--accent); }
+
+/* ---- Zona 3: panel derecho (solo escritorio ancho, oculto en chat) ---- */
+.rail { display: none; }
+@media (min-width: 1280px) {
+  body:not([data-active="chat"]) .rail {
+    display: block; flex: 0 0 336px; padding: 24px 20px 40px;
+    border-left: 1px solid var(--border);
+  }
+}
+.rail-card { position: sticky; top: 18px; background: var(--surface);
+  border: 1px solid var(--border); border-radius: var(--r-lg); padding: 8px;
+  box-shadow: var(--shadow-1); }
+.rail-head { padding: 10px 12px 4px; }
+.rail-title { font-size: 16px; font-weight: 800; letter-spacing: -.01em; color: var(--text); }
+.rail-list { list-style: none; margin: 4px 0; padding: 0; }
+.rail-user { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 12px; }
+.rail-user:hover { background: var(--surface-2); }
+.rail-uav { flex: 0 0 40px; width: 40px; height: 40px; border-radius: 50%;
+  background: var(--surface-3) center/cover no-repeat; display: flex; align-items: center; justify-content: center;
+  color: var(--text-3); font-weight: 700; font-size: 15px; }
+.rail-user .sk-av { flex: 0 0 40px; width: 40px; height: 40px; }
+.rail-uinfo { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+.rail-uinfo b { font-size: 14px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rail-uinfo span { font-size: 12.5px; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rail-follow { flex: 0 0 auto; border: 0; background: var(--accent); color: #fff; font-weight: 700; font-size: 13px;
+  padding: 7px 15px; border-radius: 999px; cursor: pointer; transition: background .15s ease, transform .1s ease; }
+.rail-follow:hover { background: var(--accent-hover); }
+.rail-follow:active { transform: scale(.96); }
+.rail-follow:disabled { opacity: .6; cursor: default; }
+.rail-follow:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--accent); }
+.rail-more { display: block; width: 100%; text-align: left; padding: 10px 12px; margin-top: 2px;
+  border: 0; background: transparent; color: var(--accent); font-weight: 600; font-size: 13.5px; cursor: pointer; border-radius: 10px; }
+.rail-more:hover { background: var(--surface-2); }
+.rail-foot { padding: 16px 12px 0; color: var(--text-3); font-size: 12px; display: flex; gap: 6px; flex-wrap: wrap; }
+.rail-dot { opacity: .55; }

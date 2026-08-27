@@ -11,7 +11,7 @@
 <link rel="stylesheet" href="css/theme.css?v=20260827">
 <script src="js/theme.js?v=20260827"></script>
 </head>
-<body>
+<body data-active="home">
 
   <div class="topbar">
     <div class="logo">
@@ -294,6 +294,17 @@
 
     </div>
 
+    <aside class="rail" aria-label="Descubrir">
+      <div class="rail-card">
+        <div class="rail-head"><span class="rail-title">A quién seguir</span></div>
+        <ul class="rail-list" id="railSuggest"></ul>
+        <button class="rail-more" type="button" data-goto="search">Ver más</button>
+      </div>
+      <div class="rail-foot">
+        <span>Socialio</span><span class="rail-dot">·</span><span>Hecho para conectar</span>
+      </div>
+    </aside>
+
   </div>
 
   <nav class="bottom-nav">
@@ -325,6 +336,7 @@
   <script src="js/stories.js?v=20260717"></script>
   <script src="js/messages.js?v=20260717"></script>
   <script src="js/groups.js?v=20260717"></script>
+  <script src="js/rail.js?v=20260827"></script>
   <script src="js/ui.js?v=20260717"></script>
 
 </body>

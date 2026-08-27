@@ -49,6 +49,7 @@ navItems.forEach(function (item) {
     var target = item.dataset.tab;
 
     navItems.forEach(function (i) { i.classList.toggle('active', i.dataset.tab === target); });
+    document.body.setAttribute('data-active', target);
 
     pages.forEach(function (p) {
       p.classList.toggle('active', p.dataset.page === target);
