@@ -376,3 +376,38 @@ button:disabled { cursor: default; }
 .mm-sk .sk-av { width: 48px; height: 48px; }
 .mm-sk .sk-c { flex: 1; }
 .mm-sk .sk-l { height: 12px; border-radius: 6px; }
+
+/* ==============================================================
+   PASO 7 — Perfil (cabecera premium + grid de publicaciones)
+   ============================================================== */
+.pf-cover { background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 22%, var(--surface)), var(--surface-2)); }
+:root[data-theme="dark"] .pf-cover { background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 26%, var(--surface)), var(--surface-2)); }
+.pf-name { font-size: 22px; font-weight: 800; letter-spacing: -.02em; color: var(--text); }
+.pf-user { color: var(--text-3); font-size: 14px; }
+.pf-bio { color: var(--text-2); font-size: 14px; line-height: 1.5; }
+.pf-stats { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); box-shadow: var(--shadow-1); }
+.pf-num { color: var(--text); font-weight: 800; }
+.pf-lbl { color: var(--text-3); }
+.pf-avatar { background: var(--surface-2); }
+
+/* Grid responsive de publicaciones/multimedia/guardados */
+.pf-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; padding: 2px 0; }
+@media (min-width: 768px) { .pf-grid { gap: 10px; padding: 14px; max-width: 940px; margin: 0 auto; } }
+.pf-cell { position: relative; aspect-ratio: 1 / 1; background: var(--surface-2); overflow: hidden; cursor: pointer; border-radius: 4px; }
+@media (min-width: 768px) { .pf-cell { border-radius: 12px; } }
+.pf-cell img, .pf-cell video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pf-cell.text { display: flex; align-items: center; justify-content: center; padding: 12px; }
+.pf-cell.text span { font-size: 12.5px; line-height: 1.4; color: var(--text-2); text-align: center; overflow: hidden;
+  display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; }
+.pf-cell-stats { position: absolute; inset: 0; background: rgba(0,0,0,.45); color: #fff; opacity: 0;
+  display: flex; align-items: center; justify-content: center; gap: 18px; font-weight: 700; font-size: 14px; transition: opacity .18s ease; }
+@media (hover: hover) { .pf-cell:hover .pf-cell-stats { opacity: 1; } }
+.pf-cell-stats span { display: inline-flex; align-items: center; gap: 5px; }
+.pf-cell-stats svg { width: 18px; height: 18px; }
+.pf-grid-empty { padding: 34px 16px; text-align: center; color: var(--text-3); font-size: 13px; }
+.pf-grid-empty svg { width: 30px; height: 30px; opacity: .5; margin-bottom: 8px; }
+
+/* Lightbox de imagen */
+.pf-lightbox { position: fixed; inset: 0; background: rgba(0,0,0,.92); z-index: 420; display: none; align-items: center; justify-content: center; }
+.pf-lightbox.open { display: flex; animation: st-in .2s ease; }
+.pf-lightbox img { max-width: 96%; max-height: 92%; border-radius: 10px; }

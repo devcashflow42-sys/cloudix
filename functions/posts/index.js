@@ -12,12 +12,28 @@ export async function onRequestGet(context) {
     const { page, limit, offset } = parsePagination(url);
     const sql = getSql(context.env);
 
-    // ?saved=true -> solo mis publicaciones guardadas
+    // ?saved=true -> guardadas ; ?mine=true -> mis publicaciones (perfil)
     const savedOnly = url.searchParams.get("saved") === "true";
-    if (savedOnly && !meId) return paginated([], paginationMeta(1, limit, 0), "Sin sesión.");
+    const mineOnly = url.searchParams.get("mine") === "true";
+    if ((savedOnly || mineOnly) && !meId) return paginated([], paginationMeta(1, limit, 0), "Sin sesión.");
 
     let totalRows, rows;
-    if (savedOnly) {
+    if (mineOnly) {
+        totalRows = await sql`SELECT COUNT(*)::int AS total FROM posts WHERE deleted_at IS NULL AND author_id = ${meId}::uuid`;
+        rows = await sql`
+            SELECT p.id, p.content, p.media, p.poll, p.visibility, p.likes_count, p.comments_count, p.created_at,
+                   u.id AS author_id, u.username, u.display_name, u.avatar_url,
+                   EXISTS (SELECT 1 FROM reactions r WHERE r.target_type = 'post' AND r.target_id = p.id AND r.user_id = ${meId}::uuid) AS liked,
+                   EXISTS (SELECT 1 FROM post_saves ps WHERE ps.post_id = p.id AND ps.user_id = ${meId}::uuid) AS saved,
+                   (SELECT COALESCE(jsonb_object_agg(option_id, cnt), '{}'::jsonb)
+                    FROM (SELECT option_id, COUNT(*)::int AS cnt FROM poll_votes WHERE post_id = p.id GROUP BY option_id) t) AS poll_counts,
+                   (SELECT pv.option_id FROM poll_votes pv WHERE pv.post_id = p.id AND pv.user_id = ${meId}::uuid LIMIT 1) AS my_vote
+            FROM posts p
+            JOIN users u ON u.id = p.author_id
+            WHERE p.deleted_at IS NULL AND p.author_id = ${meId}::uuid
+            ORDER BY p.created_at DESC
+            LIMIT ${limit} OFFSET ${offset}`;
+    } else if (savedOnly) {
         totalRows = await sql`
             SELECT COUNT(*)::int AS total FROM post_saves ps
             JOIN posts p ON p.id = ps.post_id
