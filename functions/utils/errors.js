@@ -31,7 +31,10 @@ export class ConflictError extends AppError {
     constructor(message = "Conflicto con el estado actual.", details) { super(message, 409, "CONFLICT", details); }
 }
 export class TooManyRequestsError extends AppError {
-    constructor(message = "Demasiadas solicitudes.") { super(message, 429, "TOO_MANY_REQUESTS"); }
+    constructor(message = "Demasiadas solicitudes.", retryAfter) {
+        super(message, 429, "TOO_MANY_REQUESTS", retryAfter ? { retryAfter } : undefined);
+        this.retryAfter = retryAfter;
+    }
 }
 
 /**
@@ -40,7 +43,9 @@ export class TooManyRequestsError extends AppError {
  */
 export function toErrorResponse(err) {
     if (err instanceof AppError) {
-        return errorResponse(err.message, { code: err.code, status: err.status, details: err.details });
+        const res = errorResponse(err.message, { code: err.code, status: err.status, details: err.details });
+        if (err.retryAfter) res.headers.set("Retry-After", String(err.retryAfter));
+        return res;
     }
     // Errores de PostgreSQL (Neon expone err.code SQLSTATE).
     switch (err?.code) {

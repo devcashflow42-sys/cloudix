@@ -5,7 +5,9 @@
 //
 // Formato almacenado:  pbkdf2$<iteraciones>$<salt_b64>$<hash_b64>
 
+// 100.000 es el máximo que admite PBKDF2 en Cloudflare Workers.
 const ITERATIONS = 100_000;
+const MAX_ITERATIONS = 100_000;
 const KEY_LEN_BITS = 256;
 const enc = new TextEncoder();
 
@@ -47,14 +49,33 @@ function timingSafeEqual(a, b) {
 }
 
 export async function verifyPassword(password, stored) {
-    if (typeof stored !== "string") return false;
+    if (typeof password !== "string" || typeof stored !== "string") return false;
     const [scheme, iterStr, saltB64, hashB64] = stored.split("$");
     if (scheme !== "pbkdf2") return false;
     const iterations = parseInt(iterStr, 10);
-    const salt = fromB64(saltB64);
-    const expected = fromB64(hashB64);
+    if (!Number.isInteger(iterations) || iterations < 1 || iterations > MAX_ITERATIONS) return false;
+    let salt, expected;
+    try {
+        salt = fromB64(saltB64);
+        expected = fromB64(hashB64);
+    } catch {
+        return false;
+    }
     const actual = await derive(password, salt, iterations);
     return timingSafeEqual(actual, expected);
+}
+
+let dummyHash;
+
+/**
+ * Ejecuta una verificación ficticia con el mismo coste que una real. Se usa
+ * cuando el usuario no existe para que el tiempo de respuesta no revele
+ * qué cuentas están registradas.
+ */
+export async function verifyDummyPassword(password) {
+    dummyHash ||= await hashPassword(randomToken(16));
+    await verifyPassword(String(password), dummyHash);
+    return false;
 }
 
 /** Token opaco aleatoriamente seguro (para refresh/reset/verify). */

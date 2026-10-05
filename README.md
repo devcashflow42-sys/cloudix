@@ -78,6 +78,19 @@ JWT_SECRET="una-clave-larga-y-aleatoria-de-32-o-mas-caracteres"
 npm run migrate
 ```
 
+> La migración `0006_auth_security` crea la tabla `auth_rate_limits`, usada
+> para limitar intentos de login y bloquear cuentas temporalmente.
+
+### Seguridad del login
+
+- **Bloqueo de cuenta**: 5 contraseñas incorrectas en 15 min bloquean esa cuenta 15 min (HTTP 429 + `Retry-After`).
+- **Límite por IP**: 20 fallos de login / 15 min, 10 registros / hora y 5 recuperaciones / hora.
+- **Sin enumeración de usuarios**: misma respuesta y mismo coste de hash exista o no la cuenta.
+- **Refresh tokens**: rotación atómica y detección de reutilización (si se reutiliza un token ya rotado se cierran todas las sesiones).
+- **Tokens de reset/verificación**: nunca se devuelven en la API salvo con `EXPOSE_DEV_TOKENS="true"` (solo desarrollo).
+- **JWT**: solo `HS256` y `typ: "access"`; usa un `JWT_SECRET` aleatorio de 32+ caracteres.
+- **Cabeceras**: `nosniff`, `X-Frame-Options: DENY`, HSTS y `Cache-Control: no-store` en rutas de autenticación.
+
 ### 4. Desarrollo local (emula el edge + funciones)
 
 ```bash

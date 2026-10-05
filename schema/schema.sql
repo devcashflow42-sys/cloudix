@@ -251,3 +251,11 @@ CREATE TABLE IF NOT EXISTS post_reports (
     created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE (post_id, reporter_id)
 );
+
+-- ------------------ SEGURIDAD DE AUTENTICACIÓN -------------------
+CREATE TABLE IF NOT EXISTS auth_rate_limits (
+    key          VARCHAR(320) PRIMARY KEY,
+    count        INTEGER NOT NULL DEFAULT 0,
+    window_start TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_auth_rate_limits_window ON auth_rate_limits (window_start);
