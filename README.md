@@ -196,6 +196,12 @@ Todas son opcionales: si no se definen, el código usa el valor por defecto.
 | `MEDIA_BUCKET` | Binding R2 | Bucket donde `/upload` guarda los archivos. Se activa descomentando `[[r2_buckets]]` en `wrangler.toml`. Sin él, `/upload` no está disponible. |
 | `MEDIA_PUBLIC_URL` | Variable | URL pública del bucket (p. ej. `https://media.tudominio.com`). Si se define, la respuesta de `/upload` incluye la URL final del archivo; si no, `url` es `null`. |
 
+### Solo desarrollo
+
+| Variable | Por defecto | Descripción |
+|----------|-------------|-------------|
+| `EXPOSE_DEV_TOKENS` | _(sin definir)_ | Si vale `"true"`, `/auth/register` y `/auth/forgot-password` devuelven el token de verificación / restablecimiento en la respuesta, para probar sin servidor de correo. **Nunca** lo actives en producción: permitiría restablecer la contraseña de cualquier cuenta. |
+
 ### Secretos de GitHub Actions
 
 El workflow `.github/workflows/stories-cleanup.yml` (cada 15 min) necesita estos
