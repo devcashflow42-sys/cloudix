@@ -5,6 +5,7 @@
 #  En producción, define cada una con:
 #    wrangler pages secret put DATABASE_URL
 #    wrangler pages secret put JWT_SECRET
+#    wrangler pages secret put CRON_SECRET
 # ==============================================================
 
 # Cadena de conexión de Neon (PostgreSQL serverless sobre HTTP/WS).
@@ -22,3 +23,13 @@ CRON_SECRET="otra-cadena-aleatoria-para-el-cron-de-limpieza"
 # poder probar sin servidor de correo. NUNCA lo actives en producción:
 # permitiría restablecer la contraseña de cualquier cuenta.
 # EXPOSE_DEV_TOKENS="true"
+
+# --------------------------------------------------------------
+# Opcional: URL pública del bucket R2 usado por /upload.
+# Si se define, la respuesta de /upload incluye la URL final del archivo.
+# (Requiere descomentar el binding MEDIA_BUCKET en wrangler.toml.)
+# --------------------------------------------------------------
+# MEDIA_PUBLIC_URL="https://media.tudominio.com"
+
+# Las variables NO secretas (APP_NAME, JWT_ISSUER, ACCESS_TOKEN_TTL, CORS_ORIGIN...)
+# están en wrangler.toml -> [vars]. Ver la sección "Variables de entorno" del README.
