@@ -67,10 +67,18 @@ npm install
 
 Crea un archivo `.dev.vars` (copiado de `.dev.vars.example`) para desarrollo local:
 
+```bash
+cp .dev.vars.example .dev.vars
+```
+
 ```
 DATABASE_URL="postgresql://user:pass@host/db?sslmode=require"
 JWT_SECRET="una-clave-larga-y-aleatoria-de-32-o-mas-caracteres"
+CRON_SECRET="otra-cadena-aleatoria-para-el-cron-de-limpieza"
 ```
+
+> Consulta la sección [Variables de entorno](#variables-de-entorno) para ver qué
+> hace cada variable, si es obligatoria y su valor por defecto.
 
 ### 3. Aplicar migraciones
 
@@ -96,7 +104,10 @@ En producción define los secretos con:
 ```bash
 wrangler pages secret put DATABASE_URL
 wrangler pages secret put JWT_SECRET
+wrangler pages secret put CRON_SECRET
 ```
+
+(o en el panel: *Workers & Pages → tu proyecto → Settings → Variables and Secrets*).
 
 ### Deploy desde CI (API token)
 
@@ -129,6 +140,65 @@ npx wrangler pages project create cloudix-edge --production-branch=main
 > **Recomendación:** conecta el repo como proyecto **Pages** (no Workers). Un
 > proyecto Pages publica `public/` + `functions/` automáticamente y no ejecuta
 > ningún `wrangler deploy`, así que ninguno de los dos primeros errores puede ocurrir.
+
+---
+
+## Variables de entorno
+
+Cloudix lee su configuración de las variables del proyecto de Cloudflare Pages
+(`context.env`). Hay tres lugares donde se definen:
+
+| Dónde | Para qué | Cómo |
+|-------|----------|------|
+| `.dev.vars` | Secretos en **desarrollo local** (`npm run dev`, `npm run migrate`) | Copia `.dev.vars.example` → `.dev.vars` (está en `.gitignore`, **nunca** lo subas) |
+| `wrangler.toml` → `[vars]` | Variables **no secretas** (local y producción) | Edita el archivo; ya trae valores por defecto |
+| Secretos de Cloudflare Pages | Secretos en **producción** | `wrangler pages secret put <NOMBRE>` o el panel de Cloudflare |
+
+### Secretos (obligatorios)
+
+| Variable | Obligatoria | Descripción | Ejemplo |
+|----------|:-----------:|-------------|---------|
+| `DATABASE_URL` | ✅ | Cadena de conexión de PostgreSQL (Neon). Usa la variante `-pooler` para alta concurrencia. También la usa `npm run migrate`. Sin ella, cualquier endpoint con base de datos falla. | `postgresql://user:pass@ep-xxx-pooler.region.aws.neon.tech/db?sslmode=require` |
+| `JWT_SECRET` | ✅ | Clave para firmar y verificar los access tokens (HS256). Cadena aleatoria de **32+ caracteres**. Si cambia, todas las sesiones activas quedan invalidadas. | `openssl rand -base64 48` |
+| `CRON_SECRET` | Solo para limpieza de historias | Protege `POST /stories/cleanup`. Si no está definida, ese endpoint responde `501 NOT_CONFIGURED`. Se envía en la cabecera `X-Cron-Secret` (o `Authorization: Bearer`). | `openssl rand -hex 32` |
+
+### Variables públicas (`wrangler.toml` → `[vars]`)
+
+Todas son opcionales: si no se definen, el código usa el valor por defecto.
+
+| Variable | Por defecto | Descripción |
+|----------|-------------|-------------|
+| `APP_NAME` | `Cloudix` | Nombre del servicio que devuelve el endpoint de salud (`/api`). |
+| `API_VERSION` | `1.0.0` | Versión que devuelve el endpoint de salud. |
+| `JWT_ISSUER` | `cloudix` | Claim `iss` de los JWT. Debe ser igual al firmar y al verificar. |
+| `JWT_AUDIENCE` | `cloudix-clients` | Claim `aud` de los JWT. |
+| `ACCESS_TOKEN_TTL` | `900` | Duración del access token, en **segundos** (15 min). |
+| `REFRESH_TOKEN_TTL` | `2592000` | Duración del refresh token, en **segundos** (30 días). |
+| `CORS_ORIGIN` | `*` | Orígenes permitidos. `*` = cualquiera; o una lista separada por comas (`https://app.com,https://www.app.com`). Si el origen de la petición no está en la lista, se responde con el primero. |
+
+### Almacenamiento (R2, opcional)
+
+| Variable | Tipo | Descripción |
+|----------|------|-------------|
+| `MEDIA_BUCKET` | Binding R2 | Bucket donde `/upload` guarda los archivos. Se activa descomentando `[[r2_buckets]]` en `wrangler.toml`. Sin él, `/upload` no está disponible. |
+| `MEDIA_PUBLIC_URL` | Variable | URL pública del bucket (p. ej. `https://media.tudominio.com`). Si se define, la respuesta de `/upload` incluye la URL final del archivo; si no, `url` es `null`. |
+
+### Secretos de GitHub Actions
+
+El workflow `.github/workflows/stories-cleanup.yml` (cada 15 min) necesita estos
+secretos del repositorio en *Settings → Secrets and variables → Actions*:
+
+| Secreto | Valor |
+|---------|-------|
+| `STORIES_CLEANUP_URL` | `https://TU-PROYECTO.pages.dev/stories/cleanup` |
+| `STORIES_CRON_SECRET` | El **mismo** valor que `CRON_SECRET` en Cloudflare Pages |
+
+Para desplegar desde CI hace falta además `CLOUDFLARE_API_TOKEN` (ver
+[Deploy desde CI](#deploy-desde-ci-api-token)).
+
+> **Seguridad:** nunca subas `.dev.vars` ni pongas secretos en `wrangler.toml`
+> (ese archivo es público en el repo). Usa valores distintos para desarrollo y
+> producción.
 
 ---
 
