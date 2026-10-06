@@ -1,200 +1,298 @@
-# Cloudix — Backend de red social sobre Cloudflare
+# Cloudix
 
-Backend **edge-first** para una red social, construido con **Cloudflare Pages Functions**
-y **PostgreSQL (Neon serverless)**. Autenticación JWT, arquitectura modular, respuestas
-JSON uniformes y manejo global de errores. Diseñado para ejecutarse en el runtime edge
-de Cloudflare (V8 isolates), no en Node.
+**Crea y lanza tu propia red social sobre la red global de Cloudflare.**
 
-> **¿Por qué no Express?** Cloudflare Workers/Functions no ejecutan Node.js: no hay
-> `net`/`http` ni sockets TCP crudos, así que `express`, `pg`, `bcrypt`, `multer` o
-> `sharp` no funcionan. Aquí se usan los equivalentes edge: enrutado por archivos de
-> Pages Functions, `@neondatabase/serverless` (PostgreSQL por HTTP), **Web Crypto**
-> para hashing de contraseñas, `jose` para JWT y **R2** para archivos.
+Cloudix es una plataforma de red social *open source* y **edge-first**: frontend
+estático y API REST desplegados juntos en **Cloudflare Pages**, con
+**PostgreSQL serverless (Neon)** como base de datos. Incluye autenticación segura,
+feed, historias, grupos, comunidades, mensajería, notificaciones y búsqueda,
+listo para personalizar con tu marca y publicar en minutos.
 
----
-
-## Estructura
-
-```
-/
-├── functions/                 # Cada archivo = una ruta (Cloudflare Pages Functions)
-│   ├── _middleware.js         # CORS + manejo global de errores (todas las rutas)
-│   ├── index.js               # GET /  (health + metadatos)
-│   ├── auth/                  # register, login, logout, refresh-token,
-│   │                          #   forgot-password, reset-password, verify-email
-│   ├── users/                 # me.js (GET/PATCH), [id].js (perfil público)
-│   ├── posts/                 # index.js (feed + crear)
-│   ├── comments/              # index.js (listar por post + crear)
-│   ├── reactions/             # index.js (reaccionar / quitar)
-│   ├── stories/               # index.js (activas + crear, expiran 24h)
-│   ├── follows/               # [id].js (seguir / dejar de seguir)
-│   ├── groups/                # index.js (listar/buscar + crear)
-│   ├── communities/           # index.js (listar + crear)
-│   ├── messages/              # index.js (conversación 1:1 + enviar)
-│   ├── notifications/         # index.js (listar + marcar leídas)
-│   ├── search/                # index.js (usuarios + posts)
-│   ├── upload/                # index.js (subida a R2)
-│   ├── admin/                 # index.js (estadísticas, rol admin)
-│   ├── middleware/            # auth.js, cors.js  (módulos, NO rutas)
-│   ├── database/              # client.js (Neon serverless)
-│   ├── services/              # authService.js  (lógica reutilizable)
-│   └── utils/                 # response, errors, jwt, password, validate, slug
-│
-├── schema/schema.sql          # Esquema de referencia
-├── migrations/0001_initial.sql
-├── scripts/migrate.mjs        # Runner de migraciones (local, usa pg)
-├── public/                    # Salida estática que publica Cloudflare Pages
-├── wrangler.toml
-└── package.json
-```
-
-> **Nota sobre Pages Functions:** todo archivo `.js` bajo `functions/` que exporte
-> `onRequest*` se convierte en ruta. Los módulos de `middleware/`, `database/`,
-> `services/` y `utils/` **no** exportan handlers, así que se importan pero no se
-> exponen como endpoints. `_middleware.js` es especial: se ejecuta en todas las rutas.
+| | |
+|---|---|
+| **Runtime** | Cloudflare Pages Functions (V8 isolates, sin servidor) |
+| **Base de datos** | PostgreSQL en Neon (driver HTTP `@neondatabase/serverless`) |
+| **Autenticación** | JWT HS256 (`jose`) + refresh tokens rotativos + PBKDF2 (Web Crypto) |
+| **Archivos** | Cloudflare R2 (opcional) |
+| **Frontend** | HTML/CSS/JS estático en `public/` (sin build) |
+| **Licencia** | MIT |
 
 ---
 
-## Puesta en marcha
+## Índice
 
-### 1. Instalar dependencias
+1. [Características](#características)
+2. [Requisitos previos](#requisitos-previos)
+3. [Guía: crea tu red social paso a paso](#guía-crea-tu-red-social-paso-a-paso)
+4. [Variables de entorno](#variables-de-entorno)
+5. [Personalización](#personalización)
+6. [Seguridad](#seguridad)
+7. [Referencia de la API](#referencia-de-la-api)
+8. [Estructura del proyecto](#estructura-del-proyecto)
+9. [Despliegue desde CI](#despliegue-desde-ci)
+10. [Solución de problemas](#solución-de-problemas)
+11. [Rendimiento y escalado](#rendimiento-y-escalado)
+
+---
+
+## Características
+
+- **Cuentas de usuario**: registro, inicio de sesión, verificación de correo,
+  recuperación de contraseña y perfiles públicos.
+- **Feed social**: publicaciones, comentarios, reacciones, votos, guardados y reportes.
+- **Historias** que expiran a las 24 h, con visualizaciones, reacciones y lista de espectadores.
+- **Relaciones**: seguir / dejar de seguir, amigos y sugerencias de usuarios.
+- **Grupos** con roles (owner, admin, moderator, member) y chat de grupo.
+- **Comunidades** con roles (founder, admin, moderator, collaborator, member).
+- **Mensajería** privada 1:1 y **notificaciones**.
+- **Búsqueda** de usuarios y publicaciones.
+- **Subida de archivos** a Cloudflare R2.
+- **Panel de administración** con estadísticas (rol `admin`).
+- **Seguridad integrada**: rate limiting, bloqueo de cuentas, rotación de tokens y
+  cabeceras de seguridad.
+
+> **¿Por qué no Express?** Cloudflare Functions no ejecutan Node.js: no existen
+> `net`/`http` ni sockets TCP, por lo que `express`, `pg`, `bcrypt`, `multer` o
+> `sharp` no funcionan. Cloudix usa los equivalentes nativos del edge: enrutado por
+> archivos, PostgreSQL sobre HTTP, **Web Crypto** para contraseñas, `jose` para JWT
+> y **R2** para archivos.
+
+---
+
+## Requisitos previos
+
+| Herramienta | Uso | Enlace |
+|-------------|-----|--------|
+| **Node.js 18+** y npm | Instalar dependencias, ejecutar migraciones y Wrangler | <https://nodejs.org> |
+| **Cuenta de Cloudflare** (plan gratuito válido) | Alojar el frontend y la API | <https://dash.cloudflare.com/sign-up> |
+| **Cuenta de Neon** (plan gratuito válido) | Base de datos PostgreSQL | <https://neon.tech> |
+| **Git** y una cuenta de GitHub | Clonar/forkear el proyecto y desplegar automáticamente | <https://github.com> |
+
+---
+
+## Guía: crea tu red social paso a paso
+
+Sigue estos pasos en orden. Al terminar tendrás tu propia red social funcionando
+en `https://<tu-proyecto>.pages.dev` (y, si quieres, en tu dominio propio).
+
+### Paso 1 — Obtén el código
+
+Haz un **fork** del repositorio en GitHub (botón *Fork*) y clónalo:
 
 ```bash
+git clone https://github.com/<tu-usuario>/cloudix.git mi-red-social
+cd mi-red-social
 npm install
 ```
 
-### 2. Configurar la base de datos (Neon) y secretos
+### Paso 2 — Crea la base de datos en Neon
 
-Crea un archivo `.dev.vars` (copiado de `.dev.vars.example`) para desarrollo local:
+1. Entra en <https://console.neon.tech> y crea un **proyecto** nuevo (elige la
+   región más cercana a tus usuarios).
+2. En **Dashboard → Connection Details**, activa **Pooled connection** y copia la
+   cadena de conexión. Tiene este formato:
+
+   ```
+   postgresql://usuario:contraseña@ep-xxxx-pooler.region.aws.neon.tech/neondb?sslmode=require
+   ```
+
+3. Guárdala: será el valor de `DATABASE_URL`.
+
+> Usa la cadena **`-pooler`**: soporta muchas más conexiones simultáneas, que es
+> justo lo que ocurre cuando cientos de funciones edge atienden peticiones a la vez.
+
+### Paso 3 — Configura las variables de entorno locales
 
 ```bash
 cp .dev.vars.example .dev.vars
 ```
 
-```
-DATABASE_URL="postgresql://user:pass@host/db?sslmode=require"
-JWT_SECRET="una-clave-larga-y-aleatoria-de-32-o-mas-caracteres"
-CRON_SECRET="otra-cadena-aleatoria-para-el-cron-de-limpieza"
+Abre `.dev.vars` y rellena los valores. Genera secretos robustos con:
+
+```bash
+openssl rand -base64 48   # para JWT_SECRET
+openssl rand -hex 32      # para CRON_SECRET
 ```
 
-> Consulta la sección [Variables de entorno](#variables-de-entorno) para ver qué
-> hace cada variable, si es obligatoria y su valor por defecto.
+> ¿Sin `openssl`? Usa Node:
+> `node -e "console.log(require('crypto').randomBytes(48).toString('base64'))"`
 
-### 3. Aplicar migraciones
+Ejemplo de `.dev.vars` completo para desarrollo:
+
+```ini
+DATABASE_URL="postgresql://usuario:contraseña@ep-xxxx-pooler.region.aws.neon.tech/neondb?sslmode=require"
+JWT_SECRET="pega-aqui-el-resultado-de-openssl-rand-base64-48"
+CRON_SECRET="pega-aqui-el-resultado-de-openssl-rand-hex-32"
+EXPOSE_DEV_TOKENS="true"   # solo en local: permite probar verificación/reset sin correo
+```
+
+La sección [Variables de entorno](#variables-de-entorno) explica cada variable en detalle.
+
+### Paso 4 — Crea las tablas (migraciones)
 
 ```bash
 npm run migrate
 ```
 
-> La migración `0006_auth_security` crea la tabla `auth_rate_limits`, usada
-> para limitar intentos de login y bloquear cuentas temporalmente.
+El script aplica en orden todos los archivos de `migrations/` y registra cuáles ya
+se ejecutaron en la tabla `schema_migrations`, así que puedes volver a lanzarlo sin
+riesgo. Lee `DATABASE_URL` de la variable de entorno o, si no existe, de `.dev.vars`.
 
-### Seguridad del login
+Salida esperada:
 
-- **Bloqueo de cuenta**: 5 contraseñas incorrectas en 15 min bloquean esa cuenta 15 min (HTTP 429 + `Retry-After`).
-- **Límite por IP**: 20 fallos de login / 15 min, 10 registros / hora y 5 recuperaciones / hora.
-- **Sin enumeración de usuarios**: misma respuesta y mismo coste de hash exista o no la cuenta.
-- **Refresh tokens**: rotación atómica y detección de reutilización (si se reutiliza un token ya rotado se cierran todas las sesiones).
-- **Tokens de reset/verificación**: nunca se devuelven en la API salvo con `EXPOSE_DEV_TOKENS="true"` (solo desarrollo).
-- **JWT**: solo `HS256` y `typ: "access"`; usa un `JWT_SECRET` aleatorio de 32+ caracteres.
-- **Cabeceras**: `nosniff`, `X-Frame-Options: DENY`, HSTS y `Cache-Control: no-store` en rutas de autenticación.
+```
++ aplicada: 0001_initial
++ aplicada: 0002_stories_expiration
+...
+```
 
-### 4. Desarrollo local (emula el edge + funciones)
+### Paso 5 — Pruébala en local
 
 ```bash
 npm run dev
-# http://localhost:8788
 ```
 
-### 5. Desplegar en Cloudflare Pages
+Abre <http://localhost:8788>:
+
+- `/` — página de inicio
+- `/register` y `/login` — registro e inicio de sesión
+- `/home.html` — la aplicación (feed, historias, mensajes...)
+- `/api` — *health check*: debe responder `"database": { "ok": true }`
+
+### Paso 6 — Publica en Cloudflare Pages
+
+**Opción A — Conectar el repositorio (recomendada).** Cada `git push` despliega
+automáticamente.
+
+1. En Cloudflare: **Workers & Pages → Create → Pages → Connect to Git** y elige tu fork.
+2. Configuración de build:
+
+   | Campo | Valor |
+   |-------|-------|
+   | Framework preset | `None` |
+   | Build command | `npm install` |
+   | Build output directory | `public` |
+
+3. Pulsa **Save and Deploy**.
+
+**Opción B — Desde tu terminal con Wrangler.**
 
 ```bash
+npx wrangler login
+npx wrangler pages project create cloudix-edge --production-branch=main
 npm run deploy
 ```
 
-En producción define los secretos con:
+> Si cambias el nombre del proyecto, actualiza también `name` en `wrangler.toml`.
+
+### Paso 7 — Configura las variables de entorno de producción
+
+Los secretos de `.dev.vars` **no** se suben a Cloudflare. Defínelos en producción
+(con valores **distintos** a los de desarrollo):
 
 ```bash
-wrangler pages secret put DATABASE_URL
-wrangler pages secret put JWT_SECRET
-wrangler pages secret put CRON_SECRET
+npx wrangler pages secret put DATABASE_URL
+npx wrangler pages secret put JWT_SECRET
+npx wrangler pages secret put CRON_SECRET
 ```
 
-(o en el panel: *Workers & Pages → tu proyecto → Settings → Variables and Secrets*).
+O desde el panel: **Workers & Pages → tu proyecto → Settings → Variables and
+Secrets → Add**, eligiendo el tipo **Secret**.
 
-### Deploy desde CI (API token)
+> Los cambios de variables se aplican en el **siguiente despliegue**. Tras
+> añadirlas, vuelve a desplegar (`npm run deploy` o *Retry deployment* en el panel).
 
-Si despliegas desde un CI con `CLOUDFLARE_API_TOKEN`, el token debe tener el
-permiso **Account → Cloudflare Pages → Edit** (el rol de la cuenta, aunque sea
-Super Admin, NO equivale a los permisos del token). Un error
-`Authentication error [code: 10000]` en `/pages/projects/...` significa que
-falta ese permiso. Crea/edita el token en
-<https://dash.cloudflare.com/profile/api-tokens> con:
+Comprueba que todo funciona en `https://<tu-proyecto>.pages.dev/api`.
 
-- Account → **Cloudflare Pages** → **Edit**
-- Account → Account Settings → Read *(recomendado)*
-- User → User Details → Read *(recomendado)*
+### Paso 8 — Crea tu cuenta de administrador
 
-Si el proyecto Pages aún no existe, créalo una vez:
+Regístrate desde `/register` y luego promociona tu usuario ejecutando en el
+**SQL Editor** de Neon:
 
-```bash
-npx wrangler pages project create cloudix-edge --production-branch=main
+```sql
+UPDATE users SET role = 'admin', is_verified = TRUE WHERE email = 'tu@correo.com';
 ```
 
-### Troubleshooting del deploy
+A partir de ese momento tendrás acceso a `GET /admin`.
 
-| Error | Causa | Solución |
-|-------|-------|----------|
-| `Could not detect a directory containing static files` | Falta el directorio de salida estático | `pages_build_output_dir = "public"` en `wrangler.toml` y usar `wrangler pages deploy` |
-| `It looks like you've run a Workers-specific command in a Pages project` / `Missing entry-point to Worker script` | Se ejecutó `wrangler deploy` (Workers) en un proyecto Pages | Usa **`npx wrangler pages deploy public`** (o `npm run deploy`), nunca `wrangler deploy` |
-| `Authentication error [code: 10000]` en `/pages/projects/...` | El `CLOUDFLARE_API_TOKEN` no tiene permiso de Pages | Añade **Cloudflare Pages → Edit** al token (el rol de la cuenta no basta) |
-| `Could not resolve "@neondatabase/serverless" / "jose"` al compilar Functions | Pages no instaló las dependencias npm (sin build command se salta el `npm install`) | En *Settings → Build configuration* pon **Build command: `npm install`** (output dir sigue siendo `public`) |
+### Paso 9 — Tareas opcionales
 
-> **Recomendación:** conecta el repo como proyecto **Pages** (no Workers). Un
-> proyecto Pages publica `public/` + `functions/` automáticamente y no ejecuta
-> ningún `wrangler deploy`, así que ninguno de los dos primeros errores puede ocurrir.
+- **Subida de imágenes y vídeos (R2)** — ver [Almacenamiento (R2)](#almacenamiento-r2-opcional).
+- **Limpieza automática de historias** — ver [Secretos de GitHub Actions](#secretos-de-github-actions).
+- **Dominio propio** — en tu proyecto Pages: **Custom domains → Set up a custom
+  domain**. Después restringe `CORS_ORIGIN` a ese dominio.
 
 ---
 
 ## Variables de entorno
 
-Cloudix lee su configuración de las variables del proyecto de Cloudflare Pages
-(`context.env`). Hay tres lugares donde se definen:
+Cloudix lee toda su configuración desde `context.env` de Cloudflare. Ningún valor
+sensible debe estar escrito en el código.
 
-| Dónde | Para qué | Cómo |
-|-------|----------|------|
-| `.dev.vars` | Secretos en **desarrollo local** (`npm run dev`, `npm run migrate`) | Copia `.dev.vars.example` → `.dev.vars` (está en `.gitignore`, **nunca** lo subas) |
-| `wrangler.toml` → `[vars]` | Variables **no secretas** (local y producción) | Edita el archivo; ya trae valores por defecto |
-| Secretos de Cloudflare Pages | Secretos en **producción** | `wrangler pages secret put <NOMBRE>` o el panel de Cloudflare |
+### Dónde se define cada variable
 
-### Secretos (obligatorios)
+| Ubicación | Entorno | Tipo de valor | ¿Se sube a Git? |
+|-----------|---------|---------------|:---------------:|
+| `.dev.vars` | Desarrollo local (`npm run dev`, `npm run migrate`) | Secretos | ❌ Nunca (está en `.gitignore`) |
+| `wrangler.toml` → `[vars]` | Local y producción | Configuración **no** secreta | ✅ Sí |
+| Cloudflare Pages → *Variables and Secrets* | Producción / Preview | Secretos | ❌ (viven en Cloudflare) |
+| GitHub → *Secrets and variables → Actions* | Workflows de CI | Secretos de automatización | ❌ (viven en GitHub) |
 
-| Variable | Obligatoria | Descripción | Ejemplo |
-|----------|:-----------:|-------------|---------|
-| `DATABASE_URL` | ✅ | Cadena de conexión de PostgreSQL (Neon). Usa la variante `-pooler` para alta concurrencia. También la usa `npm run migrate`. Sin ella, cualquier endpoint con base de datos falla. | `postgresql://user:pass@ep-xxx-pooler.region.aws.neon.tech/db?sslmode=require` |
-| `JWT_SECRET` | ✅ | Clave para firmar y verificar los access tokens (HS256). Cadena aleatoria de **32+ caracteres**. Si cambia, todas las sesiones activas quedan invalidadas. | `openssl rand -base64 48` |
-| `CRON_SECRET` | Solo para limpieza de historias | Protege `POST /stories/cleanup`. Si no está definida, ese endpoint responde `501 NOT_CONFIGURED`. Se envía en la cabecera `X-Cron-Secret` (o `Authorization: Bearer`). | `openssl rand -hex 32` |
+**Regla de oro:** si una variable da acceso a algo (base de datos, firma de tokens,
+endpoints internos), es un **secreto** y va en `.dev.vars` / Cloudflare. Si solo
+ajusta el comportamiento (nombre de la app, duración de tokens), va en `wrangler.toml`.
 
-### Variables públicas (`wrangler.toml` → `[vars]`)
+### Secretos
 
-Todas son opcionales: si no se definen, el código usa el valor por defecto.
+| Variable | Obligatoria | Descripción | Cómo generarla |
+|----------|:-----------:|-------------|----------------|
+| `DATABASE_URL` | ✅ | Cadena de conexión de PostgreSQL (Neon). Usa la variante `-pooler`. También la usa `npm run migrate`. Sin ella, todo endpoint con base de datos falla. | Neon → *Connection Details* |
+| `JWT_SECRET` | ✅ | Clave para firmar y verificar los access tokens (HS256). Mínimo **32 caracteres** aleatorios. Si cambia, todas las sesiones activas se invalidan. | `openssl rand -base64 48` |
+| `CRON_SECRET` | Para limpiar historias | Protege `POST /stories/cleanup`. Sin ella, ese endpoint responde `501 NOT_CONFIGURED`. Se envía en la cabecera `X-Cron-Secret` (o `Authorization: Bearer`). | `openssl rand -hex 32` |
+
+### Configuración pública (`wrangler.toml` → `[vars]`)
+
+Todas son opcionales; si no se definen se usa el valor por defecto.
 
 | Variable | Por defecto | Descripción |
 |----------|-------------|-------------|
-| `APP_NAME` | `Cloudix` | Nombre del servicio que devuelve el endpoint de salud (`/api`). |
-| `API_VERSION` | `1.0.0` | Versión que devuelve el endpoint de salud. |
-| `JWT_ISSUER` | `cloudix` | Claim `iss` de los JWT. Debe ser igual al firmar y al verificar. |
+| `APP_NAME` | `Cloudix` | Nombre del servicio que devuelve el *health check* (`/api`). |
+| `API_VERSION` | `1.0.0` | Versión que devuelve el *health check*. |
+| `JWT_ISSUER` | `cloudix` | Claim `iss` de los JWT. Debe coincidir al firmar y al verificar. |
 | `JWT_AUDIENCE` | `cloudix-clients` | Claim `aud` de los JWT. |
-| `ACCESS_TOKEN_TTL` | `900` | Duración del access token, en **segundos** (15 min). |
-| `REFRESH_TOKEN_TTL` | `2592000` | Duración del refresh token, en **segundos** (30 días). |
-| `CORS_ORIGIN` | `*` | Orígenes permitidos. `*` = cualquiera; o una lista separada por comas (`https://app.com,https://www.app.com`). Si el origen de la petición no está en la lista, se responde con el primero. |
+| `ACCESS_TOKEN_TTL` | `900` | Vida del access token en **segundos** (15 min). |
+| `REFRESH_TOKEN_TTL` | `2592000` | Vida del refresh token en **segundos** (30 días). |
+| `CORS_ORIGIN` | `*` | Orígenes permitidos: `*` o una lista separada por comas (`https://app.com,https://www.app.com`). Si el origen de la petición no está en la lista se responde con el primero. **En producción, restríngelo a tu dominio.** |
+
+Ejemplo para producción:
+
+```toml
+[vars]
+APP_NAME = "MiRed"
+API_VERSION = "1.0.0"
+JWT_ISSUER = "mired"
+JWT_AUDIENCE = "mired-clients"
+ACCESS_TOKEN_TTL = "900"
+REFRESH_TOKEN_TTL = "2592000"
+CORS_ORIGIN = "https://mired.com,https://www.mired.com"
+```
 
 ### Almacenamiento (R2, opcional)
 
 | Variable | Tipo | Descripción |
 |----------|------|-------------|
-| `MEDIA_BUCKET` | Binding R2 | Bucket donde `/upload` guarda los archivos. Se activa descomentando `[[r2_buckets]]` en `wrangler.toml`. Sin él, `/upload` no está disponible. |
-| `MEDIA_PUBLIC_URL` | Variable | URL pública del bucket (p. ej. `https://media.tudominio.com`). Si se define, la respuesta de `/upload` incluye la URL final del archivo; si no, `url` es `null`. |
+| `MEDIA_BUCKET` | Binding R2 | Bucket donde `/upload` guarda los archivos. Sin él, `/upload` no está disponible. |
+| `MEDIA_PUBLIC_URL` | Variable | URL pública del bucket (p. ej. `https://media.tudominio.com`). Si se define, `/upload` devuelve la URL final del archivo; si no, `url` es `null`. |
+
+Para activarlo:
+
+```bash
+npx wrangler r2 bucket create cloudix-media
+```
+
+Descomenta el bloque `[[r2_buckets]]` en `wrangler.toml`, habilita el acceso público
+del bucket (o conecta un dominio) en **R2 → tu bucket → Settings** y define
+`MEDIA_PUBLIC_URL`.
 
 ### Solo desarrollo
 
@@ -204,37 +302,106 @@ Todas son opcionales: si no se definen, el código usa el valor por defecto.
 
 ### Secretos de GitHub Actions
 
-El workflow `.github/workflows/stories-cleanup.yml` (cada 15 min) necesita estos
-secretos del repositorio en *Settings → Secrets and variables → Actions*:
+El workflow `.github/workflows/stories-cleanup.yml` elimina cada 15 minutos las
+historias caducadas. Configura en **GitHub → Settings → Secrets and variables →
+Actions**:
 
 | Secreto | Valor |
 |---------|-------|
-| `STORIES_CLEANUP_URL` | `https://TU-PROYECTO.pages.dev/stories/cleanup` |
-| `STORIES_CRON_SECRET` | El **mismo** valor que `CRON_SECRET` en Cloudflare Pages |
+| `STORIES_CLEANUP_URL` | `https://<tu-proyecto>.pages.dev/stories/cleanup` |
+| `STORIES_CRON_SECRET` | El **mismo** valor que `CRON_SECRET` en Cloudflare |
 
-Para desplegar desde CI hace falta además `CLOUDFLARE_API_TOKEN` (ver
-[Deploy desde CI](#deploy-desde-ci-api-token)).
+Para desplegar desde CI necesitas además `CLOUDFLARE_API_TOKEN` (ver
+[Despliegue desde CI](#despliegue-desde-ci)).
 
-> **Seguridad:** nunca subas `.dev.vars` ni pongas secretos en `wrangler.toml`
-> (ese archivo es público en el repo). Usa valores distintos para desarrollo y
-> producción.
+### Checklist antes de salir a producción
 
----
-
-## Autenticación
-
-- **Access token**: JWT HS256 de corta duración (`ACCESS_TOKEN_TTL`, 15 min por defecto).
-  Se envía en `Authorization: Bearer <token>`.
-- **Refresh token**: opaco, aleatorio, se guarda **hasheado** (SHA-256) en
-  `refresh_tokens`. Rota en cada `/auth/refresh-token`.
-- **Contraseñas**: PBKDF2-SHA256 (100k iteraciones) vía Web Crypto.
+- [ ] `DATABASE_URL` apunta a la base de producción (no a la de desarrollo).
+- [ ] `JWT_SECRET` y `CRON_SECRET` son **nuevos**, aleatorios y distintos de los de local.
+- [ ] `EXPOSE_DEV_TOKENS` **no** está definida en Cloudflare.
+- [ ] `CORS_ORIGIN` está restringido a tu(s) dominio(s).
+- [ ] `JWT_ISSUER` / `JWT_AUDIENCE` reflejan el nombre de tu app.
+- [ ] `.dev.vars` no aparece en `git status` ni en el historial.
+- [ ] `GET /api` responde con `"database": { "ok": true }`.
 
 ---
 
-## Endpoints
+## Personalización
+
+| Qué cambiar | Dónde |
+|-------------|-------|
+| Nombre, textos y metadatos SEO/Open Graph | `public/index.html`, `public/auth.html`, `public/home.html` |
+| Colores, tipografías y tokens de diseño | `public/css/theme.css` |
+| Estilos de cada pantalla | `public/css/*.css` |
+| Comportamiento del cliente | `public/js/*.js` (`api.js` centraliza las llamadas a la API) |
+| Rutas limpias (`/login`, `/register`...) | `public/_redirects` |
+| Nombre del proyecto y configuración | `wrangler.toml`, `package.json` |
+| Nuevos endpoints | `functions/` (un archivo = una ruta; ver [Estructura](#estructura-del-proyecto)) |
+| Cambios en la base de datos | Nuevo archivo `migrations/000N_descripcion.sql` + `npm run migrate` |
+
+> **Migraciones:** nunca edites una migración ya aplicada; crea siempre un archivo
+> nuevo con el siguiente número. Así cualquier instalación puede actualizarse con
+> `npm run migrate`.
+
+---
+
+## Seguridad
+
+- **Contraseñas**: PBKDF2-SHA256 con 100 000 iteraciones vía Web Crypto.
+- **Access token**: JWT HS256 de corta duración (`ACCESS_TOKEN_TTL`), enviado en
+  `Authorization: Bearer <token>`; solo se aceptan `alg: HS256` y `typ: "access"`.
+- **Refresh token**: opaco y aleatorio, guardado **hasheado** (SHA-256) en
+  `refresh_tokens`. Rotación atómica y detección de reutilización: si se reutiliza
+  un token ya rotado, se cierran todas las sesiones del usuario.
+- **Bloqueo de cuenta**: 5 contraseñas incorrectas en 15 min bloquean la cuenta
+  15 min (HTTP 429 + `Retry-After`).
+- **Límites por IP**: 20 fallos de login / 15 min, 10 registros / hora y
+  5 recuperaciones / hora (tabla `auth_rate_limits`, migración `0006`).
+- **Sin enumeración de usuarios**: misma respuesta y mismo coste de hash exista o no la cuenta.
+- **Tokens de reset/verificación**: nunca se devuelven por la API salvo con
+  `EXPOSE_DEV_TOKENS="true"` (solo desarrollo).
+- **Cabeceras**: `nosniff`, `X-Frame-Options: DENY`, HSTS y `Cache-Control: no-store`
+  en las rutas de autenticación.
+
+---
+
+## Referencia de la API
+
+### Formato de respuesta
+
+Todas las respuestas son JSON con la misma estructura:
+
+```json
+// Éxito
+{ "success": true, "message": "...", "data": { }, "meta": { } }
+
+// Error
+{ "success": false, "message": "...", "error": { "code": "VALIDATION_ERROR", "details": [] } }
+```
+
+### Ejemplo rápido
+
+```bash
+# Registro
+curl -X POST https://<tu-proyecto>.pages.dev/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"username":"ana","email":"ana@example.com","password":"UnaClaveSegura123!"}'
+
+# Login (identifier = correo o usuario) -> devuelve accessToken y refreshToken
+curl -X POST https://<tu-proyecto>.pages.dev/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"identifier":"ana@example.com","password":"UnaClaveSegura123!"}'
+
+# Petición autenticada
+curl https://<tu-proyecto>.pages.dev/users/me \
+  -H "Authorization: Bearer <accessToken>"
+```
+
+### Endpoints
 
 | Método | Ruta | Descripción |
 |--------|------|-------------|
+| GET | `/api` | *Health check* y metadatos |
 | POST | `/auth/register` | Crear cuenta |
 | POST | `/auth/login` | Iniciar sesión |
 | POST | `/auth/logout` | Revocar refresh token |
@@ -244,57 +411,134 @@ Para desplegar desde CI hace falta además `CLOUDFLARE_API_TOKEN` (ver
 | POST/GET | `/auth/verify-email` | Verificar correo |
 | GET/PATCH | `/users/me` | Perfil propio |
 | GET | `/users/:id` | Perfil público |
+| GET | `/users/suggestions` | Sugerencias de usuarios |
 | GET/POST | `/posts` | Feed / crear publicación |
+| PATCH/DELETE | `/posts/:id` | Editar / eliminar publicación |
+| POST | `/posts/:id/vote`, `/posts/:id/save`, `/posts/:id/report` | Votar, guardar y reportar |
 | GET/POST | `/comments` | Comentarios (`?postId=`) / crear |
 | POST/DELETE | `/reactions` | Reaccionar / quitar |
 | GET/POST | `/stories` | Historias activas / crear |
+| POST | `/stories/:id/view` | Marcar historia como vista |
+| POST/DELETE | `/stories/:id/react` | Reaccionar / quitar reacción |
+| GET | `/stories/:id/viewers` | Espectadores de una historia |
+| POST | `/stories/cleanup` | Purga de historias caducadas (requiere `CRON_SECRET`) |
 | POST/DELETE | `/follows/:id` | Seguir / dejar de seguir |
-| GET/POST | `/groups` | Listar-buscar / crear |
-| GET/POST | `/communities` | Listar / crear |
+| GET | `/friends` | Amigos |
+| GET/POST | `/groups` | Listar-buscar / crear grupo |
+| GET/POST | `/groups/:id/messages` | Chat del grupo |
+| GET/POST | `/communities` | Listar / crear comunidad |
 | GET/POST | `/messages` | Conversación (`?withUserId=`) / enviar |
 | GET/PATCH | `/notifications` | Listar / marcar leídas |
 | GET | `/search` | Buscar (`?q=&type=all\|users\|posts`) |
 | POST | `/upload` | Subir archivo a R2 |
 | GET | `/admin` | Estadísticas (rol `admin`) |
 
-Los módulos de `posts`, `comments`, `reactions`, `stories`, `follows`, `groups`,
-`communities`, `messages`, `notifications`, `search`, `upload` y `admin` incluyen un
-endpoint de ejemplo completo y funcional; se amplían siguiendo exactamente el mismo
-patrón (servicio + handler + validación).
+Los grupos y comunidades exponen además `/:id` y `/:id/members[/:userId]` para
+gestionar detalles y miembros. Consulta el handler correspondiente en `functions/`
+para ver los métodos y parámetros exactos.
 
-### Formato de respuesta
+---
 
-```json
-// Éxito
-{ "success": true, "message": "...", "data": { }, "meta": { } }
-// Error
-{ "success": false, "message": "...", "error": { "code": "VALIDATION_ERROR", "details": [] } }
+## Estructura del proyecto
+
+```
+/
+├── functions/                 # API: cada archivo = una ruta (Pages Functions)
+│   ├── _middleware.js         # CORS + manejo global de errores (todas las rutas)
+│   ├── api/                   # GET /api (health) y rutas de compatibilidad
+│   ├── auth/                  # register, login, logout, refresh-token,
+│   │                          #   forgot-password, reset-password, verify-email
+│   ├── users/                 # me, [id], suggestions
+│   ├── posts/                 # feed, [id], vote, save, report
+│   ├── comments/  reactions/  # comentarios y reacciones
+│   ├── stories/               # historias, vistas, reacciones, cleanup
+│   ├── follows/   friends/    # relaciones entre usuarios
+│   ├── groups/    communities/# grupos, comunidades y miembros
+│   ├── messages/  notifications/
+│   ├── search/    upload/   admin/
+│   ├── middleware/            # auth.js, cors.js        (módulos, NO rutas)
+│   ├── database/              # client.js (Neon)        (módulo, NO ruta)
+│   ├── services/              # lógica de negocio       (módulos, NO rutas)
+│   └── utils/                 # response, errors, jwt, password, validate...
+│
+├── public/                    # Frontend estático publicado por Cloudflare Pages
+├── migrations/                # Migraciones SQL numeradas
+├── schema/schema.sql          # Esquema de referencia
+├── scripts/migrate.mjs        # Runner de migraciones (Node local)
+├── .github/workflows/         # Limpieza programada de historias
+├── .dev.vars.example          # Plantilla de secretos locales
+├── wrangler.toml              # Configuración de Cloudflare
+└── package.json
+```
+
+> **Sobre Pages Functions:** todo archivo `.js` bajo `functions/` que exporte
+> `onRequest*` se convierte en ruta. Los módulos de `middleware/`, `database/`,
+> `services/` y `utils/` no exportan handlers, así que se importan pero no se
+> exponen. `_middleware.js` se ejecuta en todas las rutas.
+
+### Scripts disponibles
+
+| Comando | Descripción |
+|---------|-------------|
+| `npm run dev` | Servidor local con frontend + funciones en <http://localhost:8788> |
+| `npm run migrate` | Aplica las migraciones pendientes |
+| `npm run deploy` | Despliega `public/` + `functions/` en Cloudflare Pages |
+| `npm run tail` | Logs en tiempo real del despliegue |
+
+---
+
+## Despliegue desde CI
+
+Si despliegas desde un CI con `CLOUDFLARE_API_TOKEN`, el token necesita el permiso
+**Account → Cloudflare Pages → Edit** (el rol de tu cuenta, aunque sea Super Admin,
+no se hereda en el token). Créalo en <https://dash.cloudflare.com/profile/api-tokens>
+con:
+
+- Account → **Cloudflare Pages** → **Edit**
+- Account → Account Settings → Read *(recomendado)*
+- User → User Details → Read *(recomendado)*
+
+Si el proyecto aún no existe, créalo una vez:
+
+```bash
+npx wrangler pages project create cloudix-edge --production-branch=main
 ```
 
 ---
 
-## Almacenamiento de archivos (R2)
+## Solución de problemas
 
-`/upload` usa un bucket R2. Para activarlo:
+| Síntoma | Causa | Solución |
+|---------|-------|----------|
+| `/api` devuelve `"database": { "ok": false }` | `DATABASE_URL` ausente o incorrecta | Revisa `.dev.vars` (local) o los secretos de Cloudflare y vuelve a desplegar |
+| `Define DATABASE_URL` al ejecutar `npm run migrate` | No existe `.dev.vars` ni la variable de entorno | `cp .dev.vars.example .dev.vars` y rellena `DATABASE_URL` |
+| Error 401 en todas las peticiones tras un deploy | `JWT_SECRET` cambió o difiere entre entornos | Es esperado: los usuarios deben volver a iniciar sesión |
+| Error CORS en el navegador | El dominio no está en `CORS_ORIGIN` | Añádelo a la lista en `wrangler.toml` |
+| `/stories/cleanup` responde `501 NOT_CONFIGURED` | Falta `CRON_SECRET` | Defínelo en Cloudflare y en GitHub (`STORIES_CRON_SECRET`) |
+| `Could not detect a directory containing static files` | Falta el directorio de salida | `pages_build_output_dir = "public"` en `wrangler.toml` |
+| `Missing entry-point to Worker script` / `Workers-specific command` | Se ejecutó `wrangler deploy` (Workers) | Usa `npm run deploy` (`wrangler pages deploy public`) |
+| `Authentication error [code: 10000]` | El token de API no tiene permiso de Pages | Añade **Cloudflare Pages → Edit** al token |
+| `Could not resolve "@neondatabase/serverless"` / `"jose"` | Pages no instaló dependencias | *Settings → Build configuration*: **Build command `npm install`** |
 
-```bash
-wrangler r2 bucket create cloudix-media
-```
-
-Descomenta el binding `MEDIA_BUCKET` en `wrangler.toml` y define `MEDIA_PUBLIC_URL`
-(dominio público del bucket) para que la respuesta incluya la URL final.
+> **Recomendación:** conecta el repositorio como proyecto **Pages** (no Workers).
+> Pages publica `public/` + `functions/` automáticamente y evita la mayoría de
+> estos errores.
 
 ---
 
 ## Rendimiento y escalado
 
-- **Edge global**: las funciones corren cerca del usuario en la red de Cloudflare.
-- **Neon serverless**: conexiones por HTTP, sin pool TCP; escala a picos sin agotar
-  conexiones. Usa la **cadena `-pooler`** de Neon para alta concurrencia.
-- **Índices**: definidos para feed, búsqueda, bandeja de mensajes y notificaciones.
-- Añade **KV/Cache** de Cloudflare para respuestas GET calientes (binding de ejemplo
-  en `wrangler.toml`).
+- **Edge global**: las funciones se ejecutan en el centro de datos de Cloudflare
+  más cercano al usuario.
+- **Neon serverless**: conexiones por HTTP sin pool TCP; absorbe picos sin agotar
+  conexiones (usa la cadena `-pooler`).
+- **Índices** optimizados para feed, búsqueda, bandeja de mensajes y notificaciones.
+- **Caché**: añade un namespace KV de Cloudflare para respuestas GET frecuentes
+  (binding de ejemplo en `wrangler.toml`).
+
+---
 
 ## Licencia
 
-MIT
+Distribuido bajo licencia **MIT**. Puedes usarlo, modificarlo y publicarlo
+libremente, también con fines comerciales.
